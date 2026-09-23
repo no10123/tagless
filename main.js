@@ -52,41 +52,82 @@ function getEmptyTile() {
     return {x, y};
 }
 
-function newFloor() {
+function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 } = {}) {
     grid = [];
-    for (let y = 0; y < H; y++) {
-        grid.push(new Array(W).fill(wall));
+    for (let y = 0; y < H; y++) {grid.push(new Array(W).fill(wall));}
+
+    const targetEmptyTiles = Math.floor(W * H * openRatio); 
+    let carvedTiles = 0;
+    
+    let walkerX = Math.floor(W / 2);
+    let walkerY = Math.floor(H / 2);
+
+    if (p) {
+        p.x = walkerX;
+        p.y = walkerY;}
+
+    while (carvedTiles < targetEmptyTiles) {
+        for (let dy = -brush; dy <= brush; dy++) {
+            for (let dx = -brush; dx <= brush; dx++) {
+                let carveX = walkerX + dx;
+                let carveY = walkerY + dy;
+                
+                if (carveX > 0 && carveX < W - 1 && carveY > 0 && carveY < H - 1) {
+                    if (grid[carveY][carveX] === wall) {
+                        grid[carveY][carveX] = air;
+                        carvedTiles++;}}}}
+
+        const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+        const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+        
+        walkerX += randomDir[0];
+        walkerY += randomDir[1];
+
+        if (walkerX < 1 + brush)     walkerX = 1 + brush;
+        if (walkerX > W - 2 - brush) walkerX = W - 2 - brush;
+        if (walkerY < 1 + brush)     walkerY = 1 + brush;
+        if (walkerY > H - 2 - brush) walkerY = H - 2 - brush;
     }
-    const directions = [[0, -2],[0, 2],[-2, 0],[2, 0]];
 
-    function carve(x, y) {
-        grid[y][x] = air;
-        let dirs = [...directions].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < pillars; i++) {
+        let px = Math.floor(Math.random() * (W - 2)) + 1;
+        let py = Math.floor(Math.random() * (H - 2)) + 1;
+        
+        if (grid[py][px] === air && (px !== walkerX || py !== walkerY)) {
+            grid[py][px] = wall;}}
 
-        for (let [dx, dy] of dirs) {
-            const nextX = x + dx;
-            const nextY = y + dy;
+    if (outline) {
+        const tempGrid = JSON.parse(JSON.stringify(grid));
 
-            if (
-                nextY > 0 && nextY < H - 1 &&
-                nextX > 0 && nextX < W - 1 &&
-                grid[nextY][nextX] === wall
-            ) {
-                grid[y + dy / 2][x + dx / 2] = air;
-                carve(nextX, nextY);
+        for (let y = 1; y < H - 1; y++) {
+            for (let x = 1; x < W - 1; x++) {
+                if (tempGrid[y][x] === wall) {
+                    let touchesAir = false;
+
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (tempGrid[y + dy][x + dx] === air) {
+                                touchesAir = true;
+                            }
+                        }
+                    }
+
+                    if (!touchesAir) {
+                        grid[y][x] = air;
+                    }
+                }
             }
         }
     }
-    carve(p.x, p.y);
 }
 
 function draw() {
-    let display = "\n  " + " ".repeat(W);    
+    let display = "\n  " + " ".repeat(W);
     for (let i = 0; i < grid.length; i++) {
-        let I = i < instructions.length ? instructions[i] : " ";
-        display += "\n    " + grid[i].join("") + "  " + I; 
-    }    
-    body.innerText = display; 
+        let instruction = i < instructions.length ? instructions[i] : " ";
+        display += "\n    " + grid[i].join("") + "  " + instruction;
+    }
+    body.innerText = display;
 }
 
 class Player {
@@ -200,7 +241,7 @@ class stairs {
     }
     next () {
         p.floor++;
-        cls();
+        newFloor();
         new Money(m.sym);
         p.place("@");
         this.place();
@@ -209,8 +250,34 @@ class stairs {
     }
 }
 
-cls();
-const p = new Player(10, 10, "@");
+class Enemy {
+    constructor(sym) {
+        this.sym = sym;
+        let {x,y} = getEmptyTile();
+        this.x = x;
+        this.y = y;
+        grid[y][x] = sym;
+    }
+    place(sym) {
+        grid[this.y][this.x] = sym;
+    }
+    move() {
+        let dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+        let randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+        let nextX = this.x + randomDir[0];
+        let nextY = this.y + randomDir[1];
+        if (grid[nextY][nextX] !== wall && grid[nextY][nextX] !== this.sym) {
+            this.place(air);
+            this.x = nextX;
+            this.y = nextY;
+            this.place(this.sym);
+        }
+    }
+}
+
+let p;
+newFloor();
+p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
 updateStats();
 const m = new Money("$");
 const s = new stairs(">");
