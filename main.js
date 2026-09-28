@@ -331,6 +331,21 @@ class Fog {
     }
 }
 
+class timer {
+    constructor () {
+        this.start = Date.now();
+        this.start_floor = Date.now
+        this.run   = 0
+        this.floor = 0
+        this.best  = 0
+        this.avg   = 0
+    }
+    tick() {
+        n = Date.now();
+
+    }
+}
+
 const fogMap = new Fog(4, fogSymbol);
 
 let p;
