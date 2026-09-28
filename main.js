@@ -13,7 +13,9 @@ let instructions = [
     "attack: 3   ",
     "luck:   0   ",
     "lvl:    0   ",
-    "xp:     0   "
+    "xp:     0   ",
+    "vision: 4   ",
+    "Fog:    on  "
 ]
 
 function updateStats() {
@@ -24,10 +26,27 @@ function updateStats() {
     instructions[8]  = `luck:   ${p.luck}`.padEnd(12, " ");
     instructions[9]  = `lvl:    ${p.lvl}`.padEnd(12, " ");
     instructions[10] = `xp:     ${p.xp}`.padEnd(12, " ");
+    instructions[11] = `vision: ${fogMap.range}`.padEnd(12, " ");
+    instructions[12] = `Fog:    ${fogOn ? "on" : "off"}`.padEnd(12, " ");
 }
 
 const air = " ";
 const wall = "#";
+
+const style = getComputedStyle(document.body);
+const fontSize = parseFloat(style.fontSize);
+const lineHeight = style.lineHeight === "normal" ? fontSize * 1.2 : parseFloat(style.lineHeight);
+
+const charWidth = fontSize * 0.6;
+const columns = Math.floor(document.documentElement.clientWidth / charWidth);
+const rows = Math.floor(document.documentElement.clientHeight / lineHeight);
+
+console.log({ columns, rows });
+W = columns - 14
+H = rows - 5
+
+const fogSymbol = "?";
+let fogOn = true;
 
 function cls() {
     grid = [];
@@ -119,13 +138,18 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
             }
         }
     }
+
+    fogMap.reset();
 }
 
 function draw() {
+    fogMap.reveal(p.x, p.y);
+    updateStats()
     let display = "\n  " + " ".repeat(W);
     for (let i = 0; i < grid.length; i++) {
         let instruction = i < instructions.length ? instructions[i] : " ";
-        display += "\n    " + grid[i].join("") + "  " + instruction;
+        const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
+        display += "\n    " + row + "  " + instruction;
     }
     body.innerText = display;
 }
@@ -275,6 +299,40 @@ class Enemy {
     }
 }
 
+class Fog {
+    constructor(range, sym) {
+        this.range = range;
+        this.sym = sym;
+        this.reset();
+    }
+
+    reset() {
+        this.explored = Array.from({ length: H }, () => new Array(W).fill(false));
+    }
+
+    reveal(x, y) {
+        for (let row = Math.max(0, y - this.range); row <= Math.min(H - 1, y + this.range); row++) {
+            for (let column = Math.max(0, x - 4 * this.range); column <= Math.min(W - 1, x + 4 * this.range); column++) {
+                const dx = column - x;
+                const dy = row - y;
+                if (dx * dx + dy * dy <= this.range * this.range) {
+                    this.explored[row][column] = true;
+                }
+            }
+        }
+    }
+
+    isExplored(x, y) {
+        return this.explored[y][x];
+    }
+
+    adjustRange(amount) {
+        this.range = Math.max(1, this.range + amount);
+    }
+}
+
+const fogMap = new Fog(4, fogSymbol);
+
 let p;
 newFloor();
 p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
@@ -291,5 +349,14 @@ document.addEventListener("keydown", (event) => {
         draw();
     } else if (key === " ") {
         p.sword(4);
+    } else if (key === "f") {
+        fogOn = !fogOn;
+        draw();
+    } else if (key === "[") {
+        fogMap.adjustRange(-1);
+        draw();
+    } else if (key === "]") {
+        fogMap.adjustRange(1);
+        draw();
     }
 });
