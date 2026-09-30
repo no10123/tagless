@@ -3,31 +3,53 @@ let W = 41;
 let H = 21;
 let grid = [];
 let instructions = [
-    "move:       ",
-    "    w       ",
-    "  a s d     ",
-    "",
-    "floor: 1    ",
-    "money: 0$   ",
-    "hp:     100 ",
-    "attack: 3   ",
-    "luck:   0   ",
-    "lvl:    0   ",
-    "xp:     0   ",
-    "vision: 4   ",
-    "Fog:    on  "
+    "move:            ",
+    "    w            ",
+    "  a s d          ",
+    "                 ",
+    "floor:      1    ",
+    "money:      0$   ",
+    "hp:         100  ",
+    "attack:     3    ",
+    "luck:       0    ",
+    "lvl:        0    ",
+    "xp:         0    ",
+    "vision:     4    ",
+    "Fog:        on   ",
+    "total time: 0:00 ",
+    "floor time: 0:00 ",
+    "avg time:   0:00 ",
+    "best time:  0:00 ",
+    "size:       0 x 0"
 ]
+const instructionWidth = 20;
+
+function formatTime(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+}
+
+function randomInt([min, max]) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function updateStats() {
-    instructions[4]  = `floor:  ${p.floor}`.padEnd(12," ");
-    instructions[5]  = `money:  ${p.money}$`.padEnd(11, " ");
-    instructions[6]  = `hp:     ${p.hp}`.padEnd(12, " ");
-    instructions[7]  = `attack: ${p.attack}`.padEnd(12, " ");
-    instructions[8]  = `luck:   ${p.luck}`.padEnd(12, " ");
-    instructions[9]  = `lvl:    ${p.lvl}`.padEnd(12, " ");
-    instructions[10] = `xp:     ${p.xp}`.padEnd(12, " ");
-    instructions[11] = `vision: ${fogMap.range}`.padEnd(12, " ");
-    instructions[12] = `Fog:    ${fogOn ? "on" : "off"}`.padEnd(12, " ");
+    instructions[4]  = `floor:      ${p.floor}`;
+    instructions[5]  = `money:      ${p.money}$`;
+    instructions[6]  = `hp:         ${p.hp}`;
+    instructions[7]  = `attack:     ${p.attack}`;
+    instructions[8]  = `luck:       ${p.luck}`;
+    instructions[9]  = `lvl:        ${p.lvl}`;
+    instructions[10] = `xp:         ${p.xp}`;
+    instructions[11] = `vision:     ${fogMap.range}`;
+    instructions[12] = `Fog:        ${fogOn ? "on" : "off"}`;
+    instructions[13] = `total time: ${formatTime(t.run)}`;
+    instructions[14] = `floor time: ${formatTime(t.floor)}`;
+    instructions[15] = `avg time:   ${formatTime(t.avg)}`;
+    instructions[16] = `best time:  ${formatTime(t.best)}`;
+    instructions[17] = `size:       ${W} x ${H}`;
 }
 
 const air = " ";
@@ -42,11 +64,14 @@ const columns = Math.floor(document.documentElement.clientWidth / charWidth);
 const rows = Math.floor(document.documentElement.clientHeight / lineHeight);
 
 console.log({ columns, rows });
-W = columns - 14
-H = rows - 5
+W = Math.max(12, columns - instructionWidth - 20);
+H = Math.max(instructions.length, rows - 5);
 
 const fogSymbol = "?";
 let fogOn = true;
+let enemy = null;
+let battle = null;
+let gameMessage = "";
 
 function cls() {
     grid = [];
@@ -140,18 +165,59 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     }
 
     fogMap.reset();
+    t.NewFloor();
 }
 
 function draw() {
     fogMap.reveal(p.x, p.y);
     updateStats()
-    let display = "\n  " + " ".repeat(W);
-    for (let i = 0; i < grid.length; i++) {
-        let instruction = i < instructions.length ? instructions[i] : " ";
-        const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
-        display += "\n    " + row + "  " + instruction;
+    if (battle) {
+        const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
+        const outTop = [];
+        outTop.push(border)
+        outTop.push("")
+        outTop.push(battle.enemy.name.toUpperCase())
+        outTop.push(`HP: ${battle.enemy.hp}/${battle.enemy.maxHp} ATK: ${battle.enemy.attack}`)
+        outTop.push("")
+        outTop.push(`[ ${battle.enemy.name} ]`)
+        outTop.push("")
+        let message = battle.message || gameMessage;
+        const messageLines = [];
+        while (message && messageLines.length < H - 15) {
+            let line = message.slice(0, W);
+            if (message.length > W && line.includes(" ")) line = line.slice(0, line.lastIndexOf(" "));
+            messageLines.push(line);
+            message = message.slice(line.length).trimStart();
+        }
+        outTop.push(...messageLines);
+
+        const outBottom = [];
+        outBottom.push(`HERO HP: ${p.hp}`)
+        outBottom.push(`ATK: ${p.attack}  XP: ${p.xp}`)
+        outBottom.push(`GOLD: ${p.money}$`)
+        outBottom.push("1. Attack")
+        outBottom.push("2. Item")
+        outBottom.push("3. Parry")
+        outBottom.push("4. Flee")
+        outBottom.push(border)
+        const outs = [...outTop,...Array(Math.max(0, H - outTop.length - outBottom.length)).fill(""),...outBottom].slice(0, H);
+
+        let display = "\n  " + " ".repeat(W);
+        for (const out of outs) {
+            const line = String(out).slice(0, W);
+            const left = Math.floor((W - line.length) / 2);
+            display += "\n    " + " ".repeat(left) + line.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else {
+        let display = "\n  " + " ".repeat(W);
+        for (let i = 0; i < grid.length; i++) {
+            let instruction = i < instructions.length ? instructions[i] : " ";
+            const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
+            display += "\n    " + row + "  " + instruction;
+        }
+        body.innerText = display;
     }
-    body.innerText = display;
 }
 
 class Player {
@@ -168,6 +234,7 @@ class Player {
         this.luck   = 0
         this.lvl    = 0
         this.xp     = 0
+        this.sprint = 2
         this.place(this.sym);
     }    
     
@@ -185,6 +252,8 @@ class Player {
         if (dir == "d") nextX += a;
         this.lastMove = dir;
 
+        enemy.spawn()
+
         if (grid[nextY][nextX] !== wall) {
             let goUp = false
             if (grid[nextY][nextX] == s.sym) goUp = true;
@@ -197,38 +266,6 @@ class Player {
             this.y = nextY;
             this.place(this.sym);
             if (goUp) s.next();
-        }
-    }
-
-    sword(l) {
-        let dir = this.lastMove;
-        for (let i = 1; i < l; i++) {
-            let nextX = this.x;
-            let nextY = this.y;
-            
-            if (dir == "w") nextY -= i;
-            if (dir == "a") nextX -= i;
-            if (dir == "s") nextY += i;
-            if (dir == "d") nextX += i;
-            
-            if (nextY >= 0 && nextY < H && nextX >= 0 && nextX < W) {
-                grid[nextY][nextX] = "*";
-            }
-        }
-        draw();
-        
-        for (let i = 1; i < l; i++) {
-            let nextX = this.x;
-            let nextY = this.y;
-            
-            if (dir == "w") nextY -= i;
-            if (dir == "a") nextX -= i;
-            if (dir == "s") nextY += i;
-            if (dir == "d") nextX += i;
-            
-            if (nextY >= 0 && nextY < H && nextX >= 0 && nextX < W) {
-                grid[nextY][nextX] = air;
-            }
         }
     }
 }
@@ -269,32 +306,102 @@ class stairs {
         new Money(m.sym);
         p.place("@");
         this.place();
+        enemy.spawn();
         updateStats();
         draw();
     }
 }
 
 class Enemy {
-    constructor(sym) {
-        this.sym = sym;
-        let {x,y} = getEmptyTile();
-        this.x = x;
-        this.y = y;
-        grid[y][x] = sym;
+    constructor() {
+        this.chance = 200
+        this.cmax   = 1000
+        this.monsters = [
+            {"name":"goblin","hp":12,"dmg":[1,4], "ac":5, "gold":[2,5],"xp":[1,6], "w":90},
+            {"name":"ghost", "hp":6 ,"dmg":[1,12],"ac":10,"gold":[1,3],"xp":[3,12],"w":70},
+        ]
     }
-    place(sym) {
-        grid[this.y][this.x] = sym;
+    spawn() {
+        const r = Math.ceil(Math.random() * this.cmax)
+        if (r > this.chance) return;
+        this.setStats()
+        this.startBattle()
     }
-    move() {
-        let dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-        let randomDir = dirs[Math.floor(Math.random() * dirs.length)];
-        let nextX = this.x + randomDir[0];
-        let nextY = this.y + randomDir[1];
-        if (grid[nextY][nextX] !== wall && grid[nextY][nextX] !== this.sym) {
-            this.place(air);
-            this.x = nextX;
-            this.y = nextY;
-            this.place(this.sym);
+    setStats() {
+        this.id = 0;
+        this.monster = this.monsters[this.id];
+
+        const rolled = Object.fromEntries(
+            Object.entries(this.monster).map(([key, value]) => [
+                key,
+                Array.isArray(value) ? randomInt(value) : value
+            ])
+        );
+        this.name = rolled.name;
+        this.maxHp = rolled.hp + p.floor * 2;
+        this.hp = this.maxHp;
+        this.attack = rolled.dmg + p.floor;
+        this.xpReward = rolled.xp + p.floor * 2;
+        this.moneyReward = rolled.gold;
+    }
+    startBattle() {
+        if (battle) return;
+        gameMessage = "";
+        battle = {
+            enemy: this,
+            message: `A ${this.name} attacks!`,
+            parrying: false
+        };
+        draw();
+    }
+    enemyTurn(action) {
+        if (!battle) return;
+        if (battle.parrying) {
+            battle.parrying = false;
+            battle.message = "Parry! No damage.";
+        } else {
+            const damage = Math.min(p.hp, battle.enemy.attack);
+            p.hp -= damage;
+            battle.message = `${action} -${damage} HP.`;
+        }
+        draw();
+    }
+    playerAttack() {
+        if (!battle) return;
+        const damage = Math.max(1, p.attack);
+        battle.enemy.hp = Math.max(0, battle.enemy.hp - damage);
+        if (battle.enemy.hp === 0) {
+            p.xp += battle.enemy.xpReward;
+            p.money += battle.enemy.moneyReward;
+            gameMessage = `Won! +${battle.enemy.xpReward}xp +$${battle.enemy.moneyReward}`;
+            battle = null;
+            draw();
+            return;
+        }
+        this.enemyTurn(`Hit ${damage}.`);
+    }
+    flee() {
+        if (!battle) return;
+        if (Math.random() < 0.5) {
+            gameMessage = "You escaped!";
+            battle = null;
+            draw();
+            return;
+        }
+        this.enemyTurn("Flee failed.");
+    }
+    handleInput(key) {
+        if (!battle) return;
+        if (key === "1") {
+            this.playerAttack();
+        } else if (key === "2") {
+            battle.message = "Items unavailable.";
+            draw();
+        } else if (key === "3") {
+            battle.parrying = true;
+            this.enemyTurn("You parry.");
+        } else if (key === "4") {
+            this.flee();
         }
     }
 }
@@ -334,20 +441,32 @@ class Fog {
 class timer {
     constructor () {
         this.start = Date.now();
-        this.start_floor = Date.now
+        this.start_floor = Date.now();
         this.run   = 0
         this.floor = 0
         this.best  = 0
         this.avg   = 0
+        this.l3ft = []
     }
     tick() {
-        n = Date.now();
-
+        const now = Date.now();
+        this.run = now - this.start;
+        this.floor = now - this.start_floor;
+    }
+    NewFloor() {
+        this.tick();
+        this.l3ft.push(this.floor)
+        if (this.l3ft.length > 3) this.l3ft.splice(0,1)
+        if (this.floor < this.best) this.best = this.floor
+        this.avg = (this.l3ft.reduce((accumulator, currentValue) => accumulator + currentValue, 0))/this.l3ft.length
+        this.start_floor = Date.now();
+        this.tick()
     }
 }
 
 const fogMap = new Fog(4, fogSymbol);
 
+let t = new timer();
 let p;
 newFloor();
 p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
@@ -355,10 +474,22 @@ updateStats();
 const m = new Money("$");
 const s = new stairs(">");
 s.place();
+enemy = new Enemy();
+enemy.spawn();
 draw();
 
+setInterval(() => {
+    t.tick();
+    draw();
+}, 1000);
+
 document.addEventListener("keydown", (event) => {
-    const key = event.key.toLowerCase();
+    const key = event.key;
+    if (battle) {
+        enemy.handleInput(key);
+        return;
+    }
+
     if (["w", "a", "s", "d"].includes(key)) {
         p.move(key, 1);
         draw();
@@ -373,5 +504,10 @@ document.addEventListener("keydown", (event) => {
     } else if (key === "]") {
         fogMap.adjustRange(1);
         draw();
+    } else if (["W", "A", "S", "D"].includes(key)) {
+        for (let i = 0; i < p.sprint; i++) {
+            p.move(key.toLocaleLowerCase(), 1);
+            draw();
+        }
     }
 });
