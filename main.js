@@ -3,9 +3,9 @@ let W = 41;
 let H = 21;
 let grid = [];
 let instructions = [
-    "move:            ",
-    "    w            ",
-    "  a s d          ",
+    "inputs:          ",
+    " wasd to move,   ",
+    " SHIFT to sprint ",
     "                 ",
     "floor:      1    ",
     "money:      0$   ",
@@ -20,7 +20,8 @@ let instructions = [
     "floor time: 0:00 ",
     "avg time:   0:00 ",
     "best time:  0:00 ",
-    "size:       0 x 0"
+    "size:       0 x 0",
+    "difficulty: medium"
 ]
 const instructionWidth = 20;
 
@@ -50,6 +51,7 @@ function updateStats() {
     instructions[15] = `avg time:   ${formatTime(t.avg)}`;
     instructions[16] = `best time:  ${formatTime(t.best)}`;
     instructions[17] = `size:       ${W} x ${H}`;
+    instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","accended"][difficulty]}`
 }
 
 const air = " ";
@@ -275,6 +277,17 @@ class Player {
             enemy.spawn()
         }
     }
+
+    check_lvl () {
+        const reqxp = 8 + 4 * this.lvl
+        if (this.xp > reqxp) {
+            this.lvl++
+            this.xp = this.xp - reqxp
+            this.dmg++
+            this.hp = this.hp + this.lvl * 4
+            this.check_lvl()
+        }
+    }
 }
 
 class Money {
@@ -324,8 +337,8 @@ class Enemy {
         this.chance = 20
         this.cmax   = 1000
         this.monsters = [
-            {"name":"goblin","hp":12,"dmg":[1,4], "ac":5, "gold":[2,5],"xp":[1,6], "w":90},
-            {"name":"ghost", "hp":6 ,"dmg":[1,12],"ac":10,"gold":[1,3],"xp":[3,12],"w":70},
+            {"name":"goblin","hp":12,"dmg":[1,4], "ac":5, "gold":[2,5],"xp":[1,6], "lvl":0},
+            {"name":"ghost", "hp":6 ,"dmg":[1,12],"ac":10,"gold":[1,3],"xp":[3,12],"lvl":0},
         ]
     }
     spawn() {
@@ -363,18 +376,18 @@ class Enemy {
     }
     enemyTurn(action) {
         if (!battle) return;
+        const damage = Math.min(p.hp, battle.enemy.attack);
         if (battle.parrying) {
             battle.parrying = false;
-            battle.message = "Parry! No damage.";
-        } else {
-            const damage = Math.min(p.hp, battle.enemy.attack);
-            p.hp -= damage;
-            battle.message = `${action} -${damage} HP.`;
-            if (p.hp == 0) {
-                battle = null
-                reset()
-            } 
+            damage - (p.dmg - 1);
+            battle.enemy.hp = Math.max(0, battle.enemy.hp - Math.max(1, Math.floor(p.attack/2)));
         }
+        p.hp -= damage;
+        battle.message = `${action} -${damage} HP.`;
+        if (p.hp == 0) {
+            battle = null
+            reset()
+        } 
         draw();
     }
     playerAttack() {
@@ -386,6 +399,8 @@ class Enemy {
             p.money += battle.enemy.moneyReward;
             gameMessage = `Won! +${battle.enemy.xpReward}xp +$${battle.enemy.moneyReward}`;
             battle = null;
+            p.check_lvl();
+            updateStats();
             draw();
             return;
         }
@@ -505,6 +520,7 @@ let PL = new potion("P",2); // +50
 let PX = new potion("H",3); // +100
 let m;
 let s;
+let difficulty = 1; // 0 = easy, 1 = medium, 2 = hard, 3 = expert, 4 = master, 5 = godlike, 6 = accended. (could use exponitional.) 
 
 function reset() {
     battle = null;
@@ -557,5 +573,11 @@ document.addEventListener("keydown", (event) => {
             p.move(key.toLocaleLowerCase(), 1);
             draw();
         }
+    } else if (key == "-") {
+        difficulty = Math.max(0,difficulty - 1);
+        updateStats();
+    } else if (key == "=") {
+        difficulty = Math.min(6,difficulty + 1);
+        updateStats();
     }
 });
