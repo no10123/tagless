@@ -166,6 +166,10 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
 
     fogMap.reset();
     t.NewFloor();
+    PS.spawn();
+    PM.spawn();
+    PL.spawn();
+    PX.spawn();
 }
 
 function draw() {
@@ -252,13 +256,15 @@ class Player {
         if (dir == "d") nextX += a;
         this.lastMove = dir;
 
-        enemy.spawn()
-
         if (grid[nextY][nextX] !== wall) {
             let goUp = false
-            if (grid[nextY][nextX] == s.sym) goUp = true;
-            if (grid[nextY][nextX] == m.sym) {
+            if (grid[nextY][nextX] == s.sym) {
+                goUp = true;
+            } else if (grid[nextY][nextX] == m.sym) {
                 this.money += 1;
+                updateStats();
+            } else if ([PS.sym, PM.sym, PL.sym, PX.sym].includes(grid[nextY][nextX])) {
+                this.hp += [10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])]
                 updateStats();
             }
             this.place(air);
@@ -266,6 +272,7 @@ class Player {
             this.y = nextY;
             this.place(this.sym);
             if (goUp) s.next();
+            enemy.spawn()
         }
     }
 }
@@ -314,7 +321,7 @@ class stairs {
 
 class Enemy {
     constructor() {
-        this.chance = 200
+        this.chance = 20
         this.cmax   = 1000
         this.monsters = [
             {"name":"goblin","hp":12,"dmg":[1,4], "ac":5, "gold":[2,5],"xp":[1,6], "w":90},
@@ -363,6 +370,10 @@ class Enemy {
             const damage = Math.min(p.hp, battle.enemy.attack);
             p.hp -= damage;
             battle.message = `${action} -${damage} HP.`;
+            if (p.hp == 0) {
+                battle = null
+                reset()
+            } 
         }
         draw();
     }
@@ -464,19 +475,56 @@ class timer {
     }
 }
 
+class potion {
+    constructor (sym,lvl) {
+        this.sym = sym
+        this.value = [10,25,50,100][lvl]
+        this.w = [[1,2,3,4],[0,0,0,0,1,2],[0,0,0,0,0,1],[0,0,0,0,0,0,0,0,0,1]][lvl]
+    }
+    place () {
+        let {x,y} = getEmptyTile();
+        grid[y][x] = this.sym;
+    }
+    spawn () {
+        this.a = this.w[Math.floor(Math.random() * this.w.length)]
+        if (this.a > 0) {
+            for (let i = 0; i < this.a; i++) {
+                this.place()
+            }
+        }
+    }
+}
+
 const fogMap = new Fog(4, fogSymbol);
 
-let t = new timer();
+let t;
 let p;
-newFloor();
-p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
-updateStats();
-const m = new Money("$");
-const s = new stairs(">");
-s.place();
-enemy = new Enemy();
-enemy.spawn();
-draw();
+let PS = new potion("p",0); // +10
+let PM = new potion("h",1); // +25
+let PL = new potion("P",2); // +50
+let PX = new potion("H",3); // +100
+let m;
+let s;
+
+function reset() {
+    battle = null;
+    gameMessage = "";
+    fogOn = true;
+    fogMap.range = 4;
+    t = new timer();
+    p = null;
+    newFloor();
+    p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
+    m = new Money("$");
+    s = new stairs(">");
+    s.place();
+    enemy = new Enemy();
+    enemy.spawn();
+    updateStats();
+    draw();
+}
+
+reset();
 
 setInterval(() => {
     t.tick();
