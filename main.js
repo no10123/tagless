@@ -221,19 +221,20 @@ function draw() {
         }
         body.innerText = display;
     } else if (skill_selection) {
-        out = []
         const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
-        out.push(border)
-        out.push("Skill Selection:")
-        out.push(`lvl: ${p.lvl}`)
+        const out = [border, "Skill Selection:", `lvl: ${p.lvl}`];
         for (let i = 0; i < skill_selection.length; i++) {
-            out.push(`${i}. ${skill_selection[i].name}`)
+            out.push(`${i + 1}. ${skill_selection[i].name}`);
         }
-        out.push("\n" * (H - out.length - 2))
-        out.push(border)
-        for (let i = 0; i < out.length; i++) {
-            grid[i] = [...out[i], " " * (W - out[i].length)]
+        out.push(border);
+        const lines = [...out.slice(0, H), ...Array(Math.max(0, H - out.length)).fill("")];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of lines) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
         }
+        body.innerText = display;
     } else {
         let display = "\n  " + " ".repeat(W);
         for (let i = 0; i < grid.length; i++) {
@@ -306,16 +307,10 @@ class Player {
                 {"name":"+ attack", "func": () => {p.attack++;}},
                 {"name":"+hp",      "func": () => {p.hp = p.hp + p.lvl * 4;}},
                 {"name":"+3$",      "func": () => {p.money = p.money + 3;}}]
-            // 3 random skills.
-            skill_selection = [...this,options].sort(() => 0.5 - Math.random()).slice(0, 3);
+            skill_selection = this.options.slice().sort(() => 0.5 - Math.random());
             this.attack++
             this.hp = this.hp + this.lvl * 4
-            this.check_lvl()
         }
-    }
-
-    handleInput () {
-
     }
 }
 
@@ -583,6 +578,14 @@ document.addEventListener("keydown", (event) => {
         enemy.handleInput(key);
         return;
     } else if (skill_selection) {
+        const choice = Number(key) - 1;
+        if (Number.isInteger(choice) && choice >= 0 && choice < skill_selection.length) {
+            skill_selection[choice].func();
+            skill_selection = null;
+            p.check_lvl();
+            updateStats();
+            draw();
+        }
         return;
     }
 
