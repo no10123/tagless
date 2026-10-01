@@ -2,6 +2,7 @@ const body = document.getElementById("body") || document.body; // added fallback
 let W = 41;
 let H = 21;
 let grid = [];
+let best_floor = 1
 let instructions = [
     "inputs:          ",
     " wasd to move,   ",
@@ -21,7 +22,8 @@ let instructions = [
     "avg time:   0:00 ",
     "best time:  0:00 ",
     "size:       0 x 0",
-    "difficulty: medium"
+    "difficulty: medium",
+    "best floor: 1     ",
 ]
 const instructionWidth = 20;
 
@@ -51,7 +53,8 @@ function updateStats() {
     instructions[15] = `avg time:   ${formatTime(t.avg)}`;
     instructions[16] = `best time:  ${formatTime(t.best)}`;
     instructions[17] = `size:       ${W} x ${H}`;
-    instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","accended"][difficulty]}`
+    instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]}`
+    instructions[19] = `best floor: ${best_floor}`;
 }
 
 const air = " ";
@@ -74,6 +77,8 @@ let fogOn = true;
 let enemy = null;
 let battle = null;
 let gameMessage = "";
+
+let skill_selection = null
 
 function cls() {
     grid = [];
@@ -215,6 +220,20 @@ function draw() {
             display += "\n    " + " ".repeat(left) + line.padEnd(W - left);
         }
         body.innerText = display;
+    } else if (skill_selection) {
+        out = []
+        const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
+        out.push(border)
+        out.push("Skill Selection:")
+        out.push(`lvl: ${p.lvl}`)
+        for (let i = 0; i < skill_selection.length; i++) {
+            out.push(`${i}. ${skill_selection[i].name}`)
+        }
+        out.push("\n" * (H - out.length - 2))
+        out.push(border)
+        for (let i = 0; i < out.length; i++) {
+            grid[i] = [...out[i], " " * (W - out[i].length)]
+        }
     } else {
         let display = "\n  " + " ".repeat(W);
         for (let i = 0; i < grid.length; i++) {
@@ -283,10 +302,20 @@ class Player {
         if (this.xp > reqxp) {
             this.lvl++
             this.xp = this.xp - reqxp
-            this.dmg++
+            this.options = [
+                {"name":"+ attack", "func": () => {p.attack++;}},
+                {"name":"+hp",      "func": () => {p.hp = p.hp + p.lvl * 4;}},
+                {"name":"+3$",      "func": () => {p.money = p.money + 3;}}]
+            // 3 random skills.
+            skill_selection = [...this,options].sort(() => 0.5 - Math.random()).slice(0, 3);
+            this.attack++
             this.hp = this.hp + this.lvl * 4
             this.check_lvl()
         }
+    }
+
+    handleInput () {
+
     }
 }
 
@@ -322,6 +351,7 @@ class stairs {
     }
     next () {
         p.floor++;
+        best_floor = Math.max(best_floor, p.floor)
         newFloor();
         new Money(m.sym);
         p.place("@");
@@ -551,6 +581,8 @@ document.addEventListener("keydown", (event) => {
     const key = event.key;
     if (battle) {
         enemy.handleInput(key);
+        return;
+    } else if (skill_selection) {
         return;
     }
 
