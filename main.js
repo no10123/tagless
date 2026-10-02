@@ -90,6 +90,8 @@ let Settings = false;
 let credits  = false;
 let help     = false;
 
+let Death = null
+
 let reroll_tokens = 0;
 
 let Volume = 10;
@@ -264,6 +266,31 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     PX.spawn();
 }
 
+function copyRunSummary() {
+    if (!p || !navigator.clipboard || !navigator.clipboard.writeText) return;
+
+    const summary = [
+        "Dungeon run summary",
+        `Floor: ${p.floor}`,
+        `Level: ${p.lvl} | XP: ${p.xp}`,
+        `HP: ${p.hp} | Attack: ${p.attack}`,
+        `Money: ${p.money}$`,
+        `Time: ${formatTime(t.run)}`,
+        `Best floor: ${best_floor}`,
+        `Score: ${p.floor * 1000 + p.money + p.lvl * 50}`
+    ].join(" | ");
+
+    navigator.clipboard.writeText(summary)
+        .then(() => {
+            gameMessage = "copied to clipboard!";
+            draw();
+        })
+        .catch(() => {
+            gameMessage = "Clipboard unavailable.";
+            draw();
+        });
+}
+
 function draw() {
     fogMap.reveal(p.x, p.y);
     updateStats()
@@ -336,8 +363,7 @@ function draw() {
         outBottom.push(`GOLD: ${p.money}$`)
         outBottom.push("1. Attack")
         outBottom.push("2. Item")
-        outBottom.push("3. Parry")
-        outBottom.push("4. Flee")
+        outBottom.push("3. Flee")
         outBottom.push(border)
         const outs = [...outTop,...Array(Math.max(0, H - outTop.length - outBottom.length)).fill(""),...outBottom].slice(0, H);
 
@@ -440,6 +466,31 @@ function draw() {
             "? - fog / unknown tile",
             "",
             border
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (Death) {
+        const lines = [
+            border,
+            "",
+            "GAME OVER",
+            "",
+            `floor: ${p.floor}`,
+            `lvl: ${p.lvl}, xp: ${p.xp}`,
+            `attack: ${p.attack}, hp: ${p.hp}`,
+            `money: ${p.money}$`,
+            `Time: ${t.run}`,
+            "",
+            `score: ${p.floor * 1000 + p.money + p.lvl * 50}`,
+            "",
+            gameMessage ? gameMessage : "0 to copy stats.",
+            "(press any key to restart)",
+            border,
         ];
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
@@ -720,7 +771,6 @@ class Shop {
 }
 
 
-const shop = new Shop();
 class Enemy {
     constructor() {
         this.dc = 0
@@ -822,6 +872,7 @@ class Enemy {
         this.attack = Math.max(1, Math.floor((rolled.dmg + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * (0.35 + difficulty * 0.08)));
         this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1)));
+        this.ac = this.rolled.ac
     }
     startBattle() {
         if (battle) return;
@@ -845,7 +896,8 @@ class Enemy {
         battle.message = `${action} -${damage} HP.`;
         if (p.hp <= 0) {
             battle = null;
-            reset();
+            Death = true;
+            draw();
             return;
         }
         draw();
@@ -872,16 +924,6 @@ class Enemy {
         }
         this.enemyTurn(`Hit ${damage}.`);
     }
-    flee() {
-        if (!battle) return;
-        if (Math.random() < 0.5) {
-            gameMessage = "You escaped!";
-            battle = null;
-            draw();
-            return;
-        }
-        this.enemyTurn("Flee failed.");
-    }
     handleInput(key) {
         if (!battle) return;
         if (key === "1") {
@@ -892,8 +934,6 @@ class Enemy {
         } else if (key === "3") {
             battle.parrying = true;
             this.enemyTurn("You parry.");
-        } else if (key === "4") {
-            this.flee();
         }
     }
 }
@@ -993,9 +1033,11 @@ let PX = new potion("H",3); // +100
 let m;
 let s;
 let difficulty = 1; // 0 = easy, 1 = medium, 2 = hard, 3 = expert, 4 = master, 5 = godlike, 6 = accended. (could use exponitional.) 
+let shop
 
 function reset() {
     battle = null;
+    Death = false;
     gameMessage = "";
     fogOn = true;
     fogMap.range = 4;
@@ -1009,6 +1051,7 @@ function reset() {
         ]),
         brush: Math.random() < 0.8 ? 1 : 2
     });
+    shop = new Shop();
     p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
     m = new Money("$");
     s = new stairs(">");
@@ -1032,6 +1075,14 @@ document.addEventListener("keydown", (event) => {
         music.INPUT = true;
     }
     const key = event.key;
+    if (Death) {
+        if (key === "0") {
+            copyRunSummary();
+            return;
+        }
+        reset();
+        return;
+    }
     if (mainMenu) {
         if (key === "1") {
             mainMenu = false;
