@@ -92,8 +92,78 @@ let help     = false;
 
 let reroll_tokens = 0;
 
+let Volume = 10;
+let FGI = 0;
+let BGI = 0;
+let FGL = ["#cdd6f4","#f5e0dc","#cba6f7","#f38ba8","#89b4fa","#a6e3a1","#94e2d5","#f9e2af","#89b4fa"]
+let BGL = ["#1e1e2e","#5b4242","#565681","#60785e","#876482"]
+
 let complexStats = false;
 
+// music
+class MUSIC {
+    constructor () {
+        this.files = ["music/a.mp3", "music/b.mp3", "music/c.mp3", "music/d.mp3", "music/e.mp3"];
+        this.queue = [];
+        this.musicIndex = 0;
+        this.Muted = false;
+        this.audio = new Audio();
+        this.INPUT = false;
+        this.audio.addEventListener("ended", () => { this.nextMusicTrack(); });
+    }
+    shuffle(list) {
+        const next = [...list];
+        for (let i = next.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [next[i], next[j]] = [next[j], next[i]];
+        }
+        return next;
+    }
+
+    syncMusicVolume() {
+        if (!this.audio) return;
+        this.audio.volume = this.Muted ? 0 : Math.max(0, Math.min(1, Volume / 20));;
+    }
+
+    startMusic() {
+        if (!this.queue.length) {
+            this.queue = this.shuffle(this.files);
+            this.musicIndex = 0;
+        }
+
+        const currentTrack = this.queue[this.musicIndex % this.queue.length];
+        this.audio.src = currentTrack;
+        this.audio.load();
+        this.audio.volume = this.Muted ? 0 : Math.max(0, Math.min(1, Volume / 20));
+        this.audio.play().catch(() => {});
+    }
+
+    nextMusicTrack() {
+        if (!this.queue.length) {
+            this.queue = this.shuffle(this.files);
+        }
+        this.musicIndex = (this.musicIndex + 1) % this.queue.length;
+        this.startMusic();
+    }
+
+    toggleMusicMute() {
+        this.Muted = !this.Muted;
+        this.syncMusicVolume();
+    }
+
+    beginMusic() {
+        if (!this.audio.src && !this.queue.length) {
+            this.queue = this.shuffle(this.files);
+        }
+        if (!this.audio.src) {
+            this.startMusic();
+        }
+        this.audio.volume = this.Muted ? 0 : Math.max(0, Math.min(1, Volume / 20));
+        this.audio.play().catch(() => {});
+    }
+}
+
+const music = new MUSIC();
 
 function cls() {
     grid = [];
@@ -295,13 +365,76 @@ function draw() {
     } else if (Settings) {
         const lines = [
             border,
-            "WELCOME TO THE DUNGEON",
+            "SETTINGS",
             "",
+            ` -- Volume: ${Volume} / 20 --`,
+            "1. Volume -",
+            "2. Volume +",
+            `3. FG color: ${FGL[FGI]}`,
+            `4. BG color: ${BGL[BGI]}`,
+            `5. Music: ${music.Muted ? "muted" : "on"}`,
+            "6. Next track",
+            "7. back to main menu",
             "",
-            "1. PLAY",
-            "2. SETTINGS",
-            "3. CREDITS",
-            "4. help",
+            border
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (credits) {
+        const lines = [
+            border,
+            "CREDITS",
+            "",
+            "Developer: Robopugo - no10123 - me",
+            "Playtesters: me and my friends",
+            "",
+            "colors: catpucchin",
+            "insperations: binding of isaac, and dragon quest.",
+            "",
+            "music: DJARTMUSIC, MondaMusic, AGS AGS",
+            "from: https://pixabay.com/music/search/8bit/",
+            "",
+            "esc - go back to main menu",
+            border
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (help) {
+        const lines = [
+            border,
+            "HELP",
+            "",
+            "--- key binds: ---",
+            "",
+            "wasd - move",
+            "shift - sprint",
+            "c - toggle complex stats",
+            "n - next song",
+            "m - mute music",
+            "r - reroll skills/shop",
+            "1 - 9 - options",
+            "0 - in shop, goes to next floor.",
+            "- - lowers difficulty",
+            "= - raises difficulty",
+            "esc - goes to main menu.",
+            "",
+            " --- symbols: --- ",
+            "",
+            "# - wall",
+            "p,h,P,H - potions that heal you",
+            "$ - money",
+            "> - stairs to next floor.",
+            "? - fog / unknown tile",
             "",
             border
         ];
@@ -506,12 +639,12 @@ class Shop {
         this.avail = 3;
         this.shopPool = [
             // + attack
-            {"item":"+1 attack",  "cost":5, "func":  () => {p.attack += 1;}, "rarity":"common"},
-            {"item":"+2 attack",  "cost":13, "func": () => {p.attack += 2;}, "rarity":"uncommon"},
-            {"item":"+3 attack",  "cost":21, "func": () => {p.attack += 3;}, "rarity":"rare"},
-            {"item":"+4 attack",  "cost":30, "func": () => {p.attack += 4;}, "rarity":"mythic"},
-            {"item":"+5 attack", "cost":40, "func": () => {p.attack += 5;},"rarity":"legendary"},
-            {"item":"+8 attack", "cost":75, "func": () => {p.attack += 8;},"rarity":"accended"},
+            {"item":"+1 attack",  "cost":5, "func":  () => {p.attack = p.attack + 1;}, "rarity":"common"},
+            {"item":"+3 attack",  "cost":13, "func": () => {p.attack = p.attack + 3;}, "rarity":"uncommon"},
+            {"item":"+5 attack",  "cost":21, "func": () => {p.attack = p.attack + 5;}, "rarity":"rare"},
+            {"item":"+7 attack",  "cost":30, "func": () => {p.attack = p.attack + 7;}, "rarity":"mythic"},
+            {"item":"+10 attack", "cost":40, "func": () => {p.attack = p.attack + 10;},"rarity":"legendary"},
+            {"item":"+20 attack", "cost":75, "func": () => {p.attack = p.attack + 20;},"rarity":"accended"},
             // + hp
             {"item":"+10 hp",     "cost":5,  "func": () => {p.hp = p.hp + 10;}, "rarity":"common"},
             {"item":"+25 hp",     "cost":13, "func": () => {p.hp = p.hp + 25;}, "rarity":"uncommon"},
@@ -891,10 +1024,17 @@ setInterval(() => {
 }, 1000);
 
 document.addEventListener("keydown", (event) => {
+    if (!music.INPUT) {
+        music.beginMusic();
+        music.INPUT = true;
+    }
     const key = event.key;
     if (mainMenu) {
         if (key === "1") {
             mainMenu = false;
+            Settings = false;
+            credits  = false;
+            help     = false;
             reset();
             draw();
             return;
@@ -905,7 +1045,7 @@ document.addEventListener("keydown", (event) => {
             return;
         } else if (key === "3") {
             mainMenu = false;
-            Credits = true;
+            credits = true;
             draw();
             return;
         } else if (key === "4") {
@@ -953,6 +1093,51 @@ document.addEventListener("keydown", (event) => {
             }
         }
         return;
+    } else if (Settings) {
+        if (key === "1") {
+            Volume = Math.max(0, Volume - 1);
+            music.syncMusicVolume();
+            draw();
+            return;
+        } else if (key === "2") {
+            Volume = Math.min(20, Volume + 1);
+            music.syncMusicVolume();
+            draw();
+            return;
+        } else if (key === "3") {
+            FGI = (FGI + 1) % FGL.length;
+            body.style.color = FGL[FGI];
+            draw();
+            return;
+        } else if (key === "4") {
+            BGI = (BGI + 1) % BGL.length;
+            body.style.backgroundColor = BGL[BGI];
+            draw();
+            return;
+        } else if (key === "5") {
+            music.toggleMusicMute();
+            draw();
+            return;
+        } else if (key === "6") {
+            music.nextMusicTrack();
+            draw();
+            return;
+        } else if (key === "7") {
+            mainMenu = true;
+            Settings = false;
+            draw();
+            return;
+        }
+    }
+
+    if (key === "m" || key === "M") {
+        music.toggleMusicMute();
+        draw();
+        return;
+    } else if (key === "n" || key === "N") {
+        music.nextMusicTrack();
+        draw();
+        return;
     }
 
     if (["w", "a", "s", "d"].includes(key)) {
@@ -980,6 +1165,12 @@ document.addEventListener("keydown", (event) => {
         updateStats();
     } else if (key.toLocaleLowerCase() == "c") {
         complexStats = !complexStats;
+        draw();
+    } else if (key == "Escape") {
+        mainMenu = true;
+        let Settings = false;
+        let credits  = false;
+        let help     = false;
         draw();
     }
 });
