@@ -95,8 +95,8 @@ let reroll_tokens = 0;
 let Volume = 10;
 let FGI = 0;
 let BGI = 0;
-let FGL = ["#cdd6f4","#f5e0dc","#cba6f7","#f38ba8","#89b4fa","#a6e3a1","#94e2d5","#f9e2af","#89b4fa"]
-let BGL = ["#1e1e2e","#5b4242","#565681","#60785e","#876482"]
+let FGL = ["#cdd6f4","#f5e0dc","#cba6f7","#f38ba8","#89b4fa","#a6e3a1","#94e2d5","#f9e2af","#89b4fa","#1e1e2e"]
+let BGL = ["#1e1e2e","#5b4242","#565681","#60785e","#876482","#cdd6f4"]
 
 let complexStats = false;
 
@@ -269,6 +269,9 @@ function draw() {
     updateStats()
     const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
     if (mainMenu) {
+        Settings = false;
+        credits  = false;
+        help     = false;
         const lines = [
             border,
             "WELCOME TO THE DUNGEON",
@@ -1168,9 +1171,6 @@ document.addEventListener("keydown", (event) => {
         draw();
     } else if (key == "Escape") {
         mainMenu = true;
-        let Settings = false;
-        let credits  = false;
-        let help     = false;
         draw();
     }
 });
