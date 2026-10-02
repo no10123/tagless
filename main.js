@@ -96,6 +96,8 @@ let gameMessage = "";
 let skill_selection = null
 let shopState = null
 
+let reroll_tokens = 0;
+
 function cls() {
     grid = [];
     for (let y = 0; y < H; y++) {
@@ -207,6 +209,7 @@ function draw() {
                 `${index + 1}. ${item.item} - ${item.cost}$ [${item.rarity}]${item.purchased ? " SOLD" : ""}`
             ),
             "",
+            (reroll_tokens > 0) ? `[R] Refresh shop (reroll tokens: ${reroll_tokens})` : "",
             "0. Continue to floor",
             "ESC. Continue to floor"
         ];
@@ -259,7 +262,10 @@ function draw() {
         const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
         const out = [border, "Skill Selection:", `lvl: ${p.lvl}`];
         for (let i = 0; i < skill_selection.length; i++) {
-            out.push(`${i + 1}. ${skill_selection[i].name}`);
+            out.push(`${i + 1}. ${skill_selection[i].name}${p.lvl % 10 == 0 ? "+" : ""}${p.lvl % 3 == 0 ? "+" : ""}`);
+        }
+        if (reroll_tokens > 0) {
+            out.push(`[R] Refresh skills (reroll tokens: ${reroll_tokens})`);
         }
         out.push(border);
         const lines = [...out.slice(0, H), ...Array(Math.max(0, H - out.length)).fill("")];
@@ -296,6 +302,11 @@ class Player {
         this.lvl    = 0
         this.xp     = 0
         this.sprint = 2
+        this.skill_choices = 3;
+        this.unique_options = [
+            {"name":"bonus items", "func": () => {shop.avail = Math.min(10, shop.avail + 1);},"uses":7},
+            {"name":"bonus skills", "func": () => {this.skill_choices = Math.min(10, this.skill_choices + 1);},"uses":5},
+        ];
         this.place(this.sym);
     }    
     
@@ -318,7 +329,7 @@ class Player {
             if (grid[nextY][nextX] == s.sym) {
                 goUp = true;
             } else if (grid[nextY][nextX] == m.sym) {
-                this.money += 1;
+                this.money += m.mult;
                 updateStats();
             } else if ([PS.sym, PM.sym, PL.sym, PX.sym].includes(grid[nextY][nextX])) {
                 this.hp += [10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])]
@@ -339,12 +350,39 @@ class Player {
             this.lvl++
             this.xp = this.xp - reqxp
             this.options = [
-                {"name":"+ attack", "func": () => {p.attack++;}},
-                {"name":"+hp",      "func": () => {p.hp = p.hp + p.lvl * 4;}},
-                {"name":"+3$",      "func": () => {p.money = p.money + 3;}},
-                {"name":"+luck",    "func": () => {p.luck++;}},
+                {"name":"sharpen sword", "func": () => {p.attack++;}},
+                {"name":"health boost",      "func": () => {p.hp = p.hp + p.lvl * 4;}},
+                {"name":"quick buck",      "func": () => {p.money = p.money + 3 * m.mult;}},
+                {"name":"luck bonus",    "func": () => {p.luck++;}},
+                {"name":"coin collector",  "func": () => {m.mult++;}},
+                {"name":"cuppon collector",  "func": () => {shop.percent_discount = Math.min(0.5, shop.percent_discount + 0.05);}},
+                {"name":"charisma",  "func": () => {shop.discount = Math.min(20, shop.discount + 1);}},
             ]
-            skill_selection = this.options.slice().sort(() => 0.5 - Math.random());
+            this.options = [...new Set([...this.options, ...this.unique_options.filter(option => option.uses > 0 + (this.lvl % 10 == 0 ? 1 : 0) + (this.lvl % 3 == 0 ? 1 : 0))])];
+            skill_selection = this.options.slice().sort(() => 0.5 - Math.random()).slice(0, this.skill_choices);
+        }
+    }
+
+    selectSkill(skill) {
+        if (this.lvl % 10 == 0) {
+            skill.func();
+        }  
+        if (this.lvl % 3 == 0) {
+            skill.func();
+        }   
+        skill.func();
+        const uniqueIndex = this.unique_options.indexOf(skill);
+        if (uniqueIndex !== -1) {
+            if (this.lvl % 10 == 0) {
+                this.unique_options[uniqueIndex].uses--;
+            }
+            if (this.lvl % 3 == 0) {
+                this.unique_options[uniqueIndex].uses--;
+            }
+            this.unique_options[uniqueIndex].uses--;
+            if (this.unique_options[uniqueIndex].uses <= 0) {
+                this.unique_options.splice(uniqueIndex, 1);
+            }
         }
     }
 }
@@ -355,6 +393,7 @@ class Money {
         this.x = [];
         this.y = [];
         this.sym = sym;
+        this.mult = 1
         
         for (let i = 0; i < this.l; i++) {
             let {x,y} = getEmptyTile();
@@ -382,7 +421,14 @@ class stairs {
     next () {
         p.floor++;
         best_floor = Math.max(best_floor, p.floor)
-        newFloor();
+        newFloor({
+                openRatio: 0.34 + Math.random() * 0.16,
+            pillars: randomInt([
+                Math.max(4, Math.floor(W * H * 0.006)),
+                Math.max(8, Math.floor(W * H * 0.018))
+            ]),
+            brush: Math.random() < 0.8 ? 1 : 2
+        });
         new Money(m.sym);
         p.place("@");
         this.place();
@@ -394,6 +440,9 @@ class stairs {
 
 class Shop {
     constructor () {
+        this.percent_discount = 0;
+        this.discount = 0;
+        this.avail = 3;
         this.shopPool = [
             // + attack
             {"item":"+1 attack",  "cost":5, "func":  () => {p.attack = p.attack + 1;}, "rarity":"common"},
@@ -416,9 +465,23 @@ class Shop {
             {"item":"+4 luck",    "cost":30, "func": () => {p.luck = p.luck + 4;}, "rarity":"mythic"},
             {"item":"+5 luck",    "cost":40, "func": () => {p.luck = p.luck + 5;},"rarity":"legendary"},
             {"item":"+10 luck",   "cost":75, "func": () => {p.luck = p.luck + 10;},"rarity":"accended"},
+            // xp
+            {"item":"+5 xp",      "cost":5,  "func": () => {p.xp = p.xp + 5;}, "rarity":"common"},
+            {"item":"+10 xp",     "cost":13, "func": () => {p.xp = p.xp + 10;}, "rarity":"uncommon"},
+            {"item":"+15 xp",     "cost":21, "func": () => {p.xp = p.xp + 15;}, "rarity":"rare"},
+            {"item":"+20 xp",     "cost":30, "func": () => {p.xp = p.xp + 20;}, "rarity":"mythic"},
+            {"item":"+25 xp",     "cost":40, "func": () => {p.xp = p.xp + 25;},"rarity":"legendary"},
+            {"item":"+50 xp",     "cost":75, "func": () => {p.xp = p.xp + 50;},"rarity":"accended"},
+            // lvl's
+            {"item":"+1 lvl",     "cost":27, "func": () => {p.lvl = p.xp + 8  + 4  * this.lvl;}, "rarity":"rare"},
+            {"item":"+2 lvl",     "cost":50, "func": () => {p.lvl = p.xp + 20 + 8  * this.lvl}, "rarity":"mythic"},
+            {"item":"+3 lvl",     "cost":100,"func": () => {p.lvl = p.xp + 36 + 12 * this.lvl;}, "rarity":"legendary"},
+            {"item":"+5 lvl",     "cost":200,"func": () => {p.lvl = p.xp + 72 + 20 * this.lvl;}, "rarity":"accended"},
              // misc
             {"item":"+1 sprint",  "cost":20, "func": () => {p.sprint = p.sprint + 1;}, "rarity":"rare"},
             {"item":"vision +1",  "cost":30, "func": () => {fogMap.adjustRange(1);}, "rarity":"mythic"},
+            {"item":"vision +2",  "cost":50, "func": () => {fogMap.adjustRange(2);}, "rarity":"legendary"},
+            {"item":"vision +3",  "cost":100,"func": () => {fogMap.adjustRange(3);}, "rarity":"accended"},
             {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended"},
         ]
     }
@@ -427,8 +490,11 @@ class Shop {
         const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12 };
         const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70};
         const available = this.shopPool.filter(item => floor >= rarityUnlockFloor[item.rarity] && p.money >= rarityUnlockCost[item.rarity]);
+        for (let item of available) {
+            item.cost = Math.max(1,Math.floor(item.cost * (1 - this.percent_discount) - this.discount));
+        }
         const offers = [];
-        while (offers.length < 3 && available.length > 0) {
+        while (offers.length < this.avail && available.length > 0) {
             const index = Math.floor(Math.random() * available.length);
             offers.push({ ...available.splice(index, 1)[0], purchased: false });
         }
@@ -450,7 +516,8 @@ class Shop {
 const shop = new Shop();
 class Enemy {
     constructor() {
-        this.chance = 20
+        this.dc = 0
+        this.chance = 10
         this.cmax   = 1000
         this.monsters = [
             // generic monsters
@@ -508,9 +575,16 @@ class Enemy {
     spawn() {
         const chance = Math.min(this.cmax, Math.round(this.chance * (41 * 21) / (W * H)));
         const r = Math.ceil(Math.random() * this.cmax)
-        if (r > chance) return;
+        if (r > chance + this.dc) {
+            this.dc++
+            return;
+        } else {
+            this.dc = -Math.floor(Math.random() * 10)
+        };
         this.id = 0;
-        this.rate = Math.floor(((p.floor + p.lvl) ** 1.1) / 4 * (1 + difficulty * 0.5));
+        const floorTier = Math.floor((p.floor - 1) / 5);
+        const levelBonus = Math.floor(p.lvl / 10);
+        this.rate = Math.min(4, floorTier + levelBonus);
         this.mp = []
         for (let i = 0; i < this.monsters.length; i++) {
             if (this.lvls[i] <= this.rate) {
@@ -537,7 +611,7 @@ class Enemy {
         this.name = rolled.name;
         this.maxHp = Math.floor(rolled.hp + p.floor * (1 + difficulty * 0.5));
         this.hp = Math.floor(this.maxHp + this.rate);
-        this.attack = Math.floor(rolled.dmg + p.floor * (0.5 + difficulty * 0.5));
+        this.attack = Math.floor(rolled.dmg + p.floor * (0.2 + difficulty * 0.1));
         this.xpReward = Math.floor(rolled.xp + p.floor * (1 + difficulty * 0.5));
         this.moneyReward = Math.floor(rolled.gold + p.floor * (1 + difficulty * 0.5));
     }
@@ -719,7 +793,14 @@ function reset() {
     fogMap.range = 4;
     t = new timer();
     p = null;
-    newFloor();
+    newFloor({
+        openRatio: 0.34 + Math.random() * 0.16,
+        pillars: randomInt([
+            Math.max(4, Math.floor(W * H * 0.006)),
+            Math.max(8, Math.floor(W * H * 0.018))
+        ]),
+        brush: Math.random() < 0.8 ? 1 : 2
+    });
     p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
     m = new Money("$");
     s = new stairs(">");
@@ -745,6 +826,13 @@ document.addEventListener("keydown", (event) => {
             enemy.spawn();
             draw();
             return;
+        } else if (key === "r" || key === "R") {
+            if (reroll_tokens > 0) {
+                reroll_tokens--;
+                shopState = shop.open(p.floor);
+                updateStats();
+                draw();
+            }
         }
         const choice = Number(key) - 1;
         if (Number.isInteger(choice) && choice >= 0 && choice < shopState.offers.length) {
@@ -757,11 +845,19 @@ document.addEventListener("keydown", (event) => {
     } else if (skill_selection) {
         const choice = Number(key) - 1;
         if (Number.isInteger(choice) && choice >= 0 && choice < skill_selection.length) {
-            skill_selection[choice].func();
+            p.selectSkill(skill_selection[choice]);
             skill_selection = null;
             p.check_lvl();
             updateStats();
             draw();
+        } else if (key === "r" || key === "R") {
+            if (reroll_tokens > 0) {
+                reroll_tokens--;
+                p.options = [...new Set([...this.options, ...this.unique_options.filter(option => option.uses > 0 + (this.lvl % 10 == 0 ? 1 : 0) + (this.lvl % 3 == 0 ? 1 : 0))])];
+                skill_selection = p.options.slice().sort(() => 0.5 - Math.random()).slice(0, p.skill_choices);
+                updateStats();
+                draw();
+            }
         }
         return;
     }
