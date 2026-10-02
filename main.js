@@ -867,12 +867,13 @@ class Enemy {
         );
         this.name = rolled.name;
         const difficultyScale = 1 + difficulty * 0.15;
-        this.maxHp = Math.max(1, Math.floor((rolled.hp + p.floor * 0.6 + this.rate * 2) * difficultyScale));
+        const fs = Math.max(0, p.floor - 10);
+        this.maxHp = Math.max(1, Math.floor((rolled.hp * Math.pow(1.06, fs) + p.floor * 0.6 + this.rate * 2) * difficultyScale));
+        this.attack = Math.max(1, Math.floor((rolled.dmg * Math.pow(1.03, fs) + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.hp = this.maxHp;
-        this.attack = Math.max(1, Math.floor((rolled.dmg + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * (0.35 + difficulty * 0.08)));
         this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1)));
-        this.ac = this.rolled.ac
+        this.ac = rolled.ac
     }
     startBattle() {
         if (battle) return;
