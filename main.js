@@ -24,22 +24,9 @@ let instructions = [
     "size:       0 x 0",
     "difficulty: medium",
     "best floor: 1     ",
-    "debug: none",
+    
 ]
 const instructionWidth = 20;
-let lastConsoleLog = "none";
-
-function debugLog(...values) {
-    lastConsoleLog = values.map((value) => {
-        if (typeof value === "string") return value;
-        try {
-            return JSON.stringify(value) ?? String(value);
-        } catch {
-            return String(value);
-        }
-    }).join(" ");
-    console.log(...values);
-}
 
 function formatTime(milliseconds) {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -50,6 +37,10 @@ function formatTime(milliseconds) {
 
 function randomInt([min, max]) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function xpRequiredForLevel(level) {
+    return 12 + 7 * level;
 }
 
 function updateStats() {
@@ -69,7 +60,6 @@ function updateStats() {
     instructions[17] = `size:       ${W} x ${H}`;
     instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]}`
     instructions[19] = `best floor: ${best_floor}`;
-    instructions[20] = `debug: ${lastConsoleLog}`.slice(0, instructionWidth);
 }
 
 const air = " ";
@@ -83,7 +73,7 @@ const charWidth = fontSize * 0.6;
 const columns = Math.floor(document.documentElement.clientWidth / charWidth);
 const rows = Math.floor(document.documentElement.clientHeight / lineHeight);
 
-debugLog({ columns, rows });
+console.log({ columns, rows });
 W = Math.max(12, columns - instructionWidth - 20);
 H = Math.max(instructions.length, rows - 5);
 
@@ -95,8 +85,15 @@ let gameMessage = "";
 
 let skill_selection = null
 let shopState = null
+let mainMenu = true;
+let Settings = false;
+let credits  = false;
+let help     = false;
 
 let reroll_tokens = 0;
+
+let complexStats = false;
+
 
 function cls() {
     grid = [];
@@ -200,7 +197,28 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
 function draw() {
     fogMap.reveal(p.x, p.y);
     updateStats()
-    if (shopState) {
+    const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
+    if (mainMenu) {
+        const lines = [
+            border,
+            "WELCOME TO THE DUNGEON",
+            "",
+            "",
+            "1. PLAY",
+            "2. SETTINGS",
+            "3. CREDITS",
+            "4. help",
+            "",
+            border
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (shopState) {
         const lines = [
             `SHOP - FLOOR ${p.floor}`,
             `Gold: ${p.money}$`,
@@ -221,7 +239,6 @@ function draw() {
         }
         body.innerText = display;
     } else if (battle) {
-        const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
         const outTop = [];
         outTop.push(border)
         outTop.push("")
@@ -259,7 +276,6 @@ function draw() {
         }
         body.innerText = display;
     } else if (skill_selection) {
-        const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
         const out = [border, "Skill Selection:", `lvl: ${p.lvl}`];
         for (let i = 0; i < skill_selection.length; i++) {
             out.push(`${i + 1}. ${skill_selection[i].name}${p.lvl % 10 == 0 ? "+" : ""}${p.lvl % 3 == 0 ? "+" : ""}`);
@@ -276,10 +292,36 @@ function draw() {
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
         }
         body.innerText = display;
+    } else if (Settings) {
+        const lines = [
+            border,
+            "WELCOME TO THE DUNGEON",
+            "",
+            "",
+            "1. PLAY",
+            "2. SETTINGS",
+            "3. CREDITS",
+            "4. help",
+            "",
+            border
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
     } else {
         let display = "\n  " + " ".repeat(W);
+        let instruction;
         for (let i = 0; i < grid.length; i++) {
-            let instruction = i < instructions.length ? instructions[i] : " ";
+            const pannel = [instructions[4],instructions[6],instructions[7],instructions[5],instructions[10],"","C to see full stats"]
+            if (!complexStats) {
+                instruction = i < pannel.length ? pannel[i] : " ";
+            } else {
+                instruction = i < instructions.length + 2 ? [...instructions,"","c to see less stats"][i] : " ";
+            }
             const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
             display += "\n    " + row + "  " + instruction;
         }
@@ -345,22 +387,41 @@ class Player {
     }
 
     check_lvl () {
-        const reqxp = 8 + 4 * this.lvl
-        if (this.xp > reqxp) {
+        this.xp = Number.isFinite(this.xp) ? this.xp : 0;
+        const reqxp = xpRequiredForLevel(this.lvl);
+        if (this.xp >= reqxp) {
             this.lvl++
             this.xp = this.xp - reqxp
             this.options = [
                 {"name":"sharpen sword", "func": () => {p.attack++;}},
-                {"name":"health boost",      "func": () => {p.hp = p.hp + p.lvl * 4;}},
+                {"name":"health boost",      "func": () => {p.hp += 8 + p.lvl * 2;}},
                 {"name":"quick buck",      "func": () => {p.money = p.money + 3 * m.mult;}},
                 {"name":"luck bonus",    "func": () => {p.luck++;}},
                 {"name":"coin collector",  "func": () => {m.mult++;}},
                 {"name":"cuppon collector",  "func": () => {shop.percent_discount = Math.min(0.5, shop.percent_discount + 0.05);}},
                 {"name":"charisma",  "func": () => {shop.discount = Math.min(20, shop.discount + 1);}},
             ]
-            this.options = [...new Set([...this.options, ...this.unique_options.filter(option => option.uses > 0 + (this.lvl % 10 == 0 ? 1 : 0) + (this.lvl % 3 == 0 ? 1 : 0))])];
-            skill_selection = this.options.slice().sort(() => 0.5 - Math.random()).slice(0, this.skill_choices);
+            skill_selection = this.rollSkillSelection();
         }
+    }
+
+    rollSkillSelection(excluded = []) {
+        const usesRequired = 1 + Number(this.lvl % 10 === 0) + Number(this.lvl % 3 === 0);
+        const available = [
+            ...this.options,
+            ...this.unique_options.filter(option => option.uses >= usesRequired)
+        ];
+        let candidates = available.filter(option => !excluded.includes(option));
+        if (candidates.length < this.skill_choices) candidates = available;
+        return candidates.sort(() => 0.5 - Math.random()).slice(0, this.skill_choices);
+    }
+
+    xpForLevels(count) {
+        let requiredXp = 0;
+        for (let offset = 0; offset < count; offset++) {
+            requiredXp += xpRequiredForLevel(this.lvl + offset);
+        }
+        return requiredXp;
     }
 
     selectSkill(skill) {
@@ -445,12 +506,12 @@ class Shop {
         this.avail = 3;
         this.shopPool = [
             // + attack
-            {"item":"+1 attack",  "cost":5, "func":  () => {p.attack = p.attack + 1;}, "rarity":"common"},
-            {"item":"+3 attack",  "cost":13, "func": () => {p.attack = p.attack + 3;}, "rarity":"uncommon"},
-            {"item":"+5 attack",  "cost":21, "func": () => {p.attack = p.attack + 5;}, "rarity":"rare"},
-            {"item":"+7 attack",  "cost":30, "func": () => {p.attack = p.attack + 7;}, "rarity":"mythic"},
-            {"item":"+10 attack", "cost":40, "func": () => {p.attack = p.attack + 10;},"rarity":"legendary"},
-            {"item":"+20 attack", "cost":75, "func": () => {p.attack = p.attack + 20;},"rarity":"accended"},
+            {"item":"+1 attack",  "cost":5, "func":  () => {p.attack += 1;}, "rarity":"common"},
+            {"item":"+2 attack",  "cost":13, "func": () => {p.attack += 2;}, "rarity":"uncommon"},
+            {"item":"+3 attack",  "cost":21, "func": () => {p.attack += 3;}, "rarity":"rare"},
+            {"item":"+4 attack",  "cost":30, "func": () => {p.attack += 4;}, "rarity":"mythic"},
+            {"item":"+5 attack", "cost":40, "func": () => {p.attack += 5;},"rarity":"legendary"},
+            {"item":"+8 attack", "cost":75, "func": () => {p.attack += 8;},"rarity":"accended"},
             // + hp
             {"item":"+10 hp",     "cost":5,  "func": () => {p.hp = p.hp + 10;}, "rarity":"common"},
             {"item":"+25 hp",     "cost":13, "func": () => {p.hp = p.hp + 25;}, "rarity":"uncommon"},
@@ -466,33 +527,42 @@ class Shop {
             {"item":"+5 luck",    "cost":40, "func": () => {p.luck = p.luck + 5;},"rarity":"legendary"},
             {"item":"+10 luck",   "cost":75, "func": () => {p.luck = p.luck + 10;},"rarity":"accended"},
             // xp
-            {"item":"+5 xp",      "cost":5,  "func": () => {p.xp = p.xp + 5;}, "rarity":"common"},
-            {"item":"+10 xp",     "cost":13, "func": () => {p.xp = p.xp + 10;}, "rarity":"uncommon"},
-            {"item":"+15 xp",     "cost":21, "func": () => {p.xp = p.xp + 15;}, "rarity":"rare"},
-            {"item":"+20 xp",     "cost":30, "func": () => {p.xp = p.xp + 20;}, "rarity":"mythic"},
-            {"item":"+25 xp",     "cost":40, "func": () => {p.xp = p.xp + 25;},"rarity":"legendary"},
-            {"item":"+50 xp",     "cost":75, "func": () => {p.xp = p.xp + 50;},"rarity":"accended"},
+            {"item":"+3 xp",      "cost":5,  "func": () => {p.xp += 3;}, "rarity":"common"},
+            {"item":"+6 xp",      "cost":13, "func": () => {p.xp += 6;}, "rarity":"uncommon"},
+            {"item":"+9 xp",      "cost":21, "func": () => {p.xp += 9;}, "rarity":"rare"},
+            {"item":"+12 xp",     "cost":30, "func": () => {p.xp += 12;}, "rarity":"mythic"},
+            {"item":"+15 xp",     "cost":40, "func": () => {p.xp += 15;},"rarity":"legendary"},
+            {"item":"+20 xp",     "cost":75, "func": () => {p.xp += 20;},"rarity":"accended"},
             // lvl's
-            {"item":"+1 lvl",     "cost":27, "func": () => {p.lvl = p.xp + 8  + 4  * this.lvl;}, "rarity":"rare"},
-            {"item":"+2 lvl",     "cost":50, "func": () => {p.lvl = p.xp + 20 + 8  * this.lvl}, "rarity":"mythic"},
-            {"item":"+3 lvl",     "cost":100,"func": () => {p.lvl = p.xp + 36 + 12 * this.lvl;}, "rarity":"legendary"},
-            {"item":"+5 lvl",     "cost":200,"func": () => {p.lvl = p.xp + 72 + 20 * this.lvl;}, "rarity":"accended"},
+            {"item":"+1 lvl",     "cost":27, "func": () => {p.xp += p.xpForLevels(1);}, "rarity":"rare"},
+            {"item":"+2 lvl",     "cost":50, "func": () => {p.xp += p.xpForLevels(2);}, "rarity":"mythic"},
+            {"item":"+3 lvl",     "cost":100,"func": () => {p.xp += p.xpForLevels(3);}, "rarity":"legendary"},
+            {"item":"+5 lvl",     "cost":200,"func": () => {p.xp += p.xpForLevels(5);}, "rarity":"accended"},
              // misc
             {"item":"+1 sprint",  "cost":20, "func": () => {p.sprint = p.sprint + 1;}, "rarity":"rare"},
             {"item":"vision +1",  "cost":30, "func": () => {fogMap.adjustRange(1);}, "rarity":"mythic"},
             {"item":"vision +2",  "cost":50, "func": () => {fogMap.adjustRange(2);}, "rarity":"legendary"},
             {"item":"vision +3",  "cost":100,"func": () => {fogMap.adjustRange(3);}, "rarity":"accended"},
             {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended"},
+            // reroll tokens
+            {"item":"1 reroll token",  "cost":8,   "func": () => {reroll_tokens += 1;}, "rarity":"common"},
+            {"item":"1 reroll token", "cost":18,  "func": () => {reroll_tokens += 1;}, "rarity":"uncommon"},
+            {"item":"2 reroll tokens", "cost":30,  "func": () => {reroll_tokens += 2;}, "rarity":"rare"},
+            {"item":"2 reroll tokens", "cost":50,  "func": () => {reroll_tokens += 2;}, "rarity":"mythic"},
+            {"item":"3 reroll tokens", "cost":100, "func": () => {reroll_tokens += 3;}, "rarity":"legendary"},
+            {"item":"4 reroll tokens", "cost":150, "func": () => {reroll_tokens += 4;}, "rarity":"accended"},
         ]
     }
 
     open(floor) {
         const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12 };
         const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70};
-        const available = this.shopPool.filter(item => floor >= rarityUnlockFloor[item.rarity] && p.money >= rarityUnlockCost[item.rarity]);
-        for (let item of available) {
-            item.cost = Math.max(1,Math.floor(item.cost * (1 - this.percent_discount) - this.discount));
-        }
+        const available = this.shopPool
+            .filter(item => floor >= rarityUnlockFloor[item.rarity] && p.money >= rarityUnlockCost[item.rarity])
+            .map(item => ({
+                ...item,
+                cost: Math.max(1, Math.floor(item.cost * (1 - this.percent_discount) - this.discount))
+            }));
         const offers = [];
         while (offers.length < this.avail && available.length > 0) {
             const index = Math.floor(Math.random() * available.length);
@@ -507,6 +577,7 @@ class Shop {
         p.money -= item.cost;
         item.func();
         item.purchased = true;
+        p.check_lvl();
         updateStats();
         draw();
     }
@@ -609,11 +680,12 @@ class Enemy {
             ])
         );
         this.name = rolled.name;
-        this.maxHp = Math.floor(rolled.hp + p.floor * (1 + difficulty * 0.5));
-        this.hp = Math.floor(this.maxHp + this.rate);
-        this.attack = Math.floor(rolled.dmg + p.floor * (0.2 + difficulty * 0.1));
-        this.xpReward = Math.floor(rolled.xp + p.floor * (1 + difficulty * 0.5));
-        this.moneyReward = Math.floor(rolled.gold + p.floor * (1 + difficulty * 0.5));
+        const difficultyScale = 1 + difficulty * 0.15;
+        this.maxHp = Math.max(1, Math.floor((rolled.hp + p.floor * 0.6 + this.rate * 2) * difficultyScale));
+        this.hp = this.maxHp;
+        this.attack = Math.max(1, Math.floor((rolled.dmg + p.floor * 0.15) * (1 + difficulty * 0.16)));
+        this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * (0.35 + difficulty * 0.08)));
+        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1)));
     }
     startBattle() {
         if (battle) return;
@@ -820,7 +892,29 @@ setInterval(() => {
 
 document.addEventListener("keydown", (event) => {
     const key = event.key;
-    if (shopState) {
+    if (mainMenu) {
+        if (key === "1") {
+            mainMenu = false;
+            reset();
+            draw();
+            return;
+        } else if (key === "2") {
+            mainMenu = false;
+            Settings = true;
+            draw();
+            return;
+        } else if (key === "3") {
+            mainMenu = false;
+            Credits = true;
+            draw();
+            return;
+        } else if (key === "4") {
+            mainMenu = false;
+            help = true;
+            draw();
+            return;
+        }
+    } else if (shopState) {
         if (key === "Escape" || key === "0") {
             shopState = null;
             enemy.spawn();
@@ -853,8 +947,7 @@ document.addEventListener("keydown", (event) => {
         } else if (key === "r" || key === "R") {
             if (reroll_tokens > 0) {
                 reroll_tokens--;
-                p.options = [...new Set([...this.options, ...this.unique_options.filter(option => option.uses > 0 + (this.lvl % 10 == 0 ? 1 : 0) + (this.lvl % 3 == 0 ? 1 : 0))])];
-                skill_selection = p.options.slice().sort(() => 0.5 - Math.random()).slice(0, p.skill_choices);
+                skill_selection = p.rollSkillSelection(skill_selection);
                 updateStats();
                 draw();
             }
@@ -885,5 +978,8 @@ document.addEventListener("keydown", (event) => {
     } else if (key == "=") {
         difficulty = Math.min(6,difficulty + 1);
         updateStats();
+    } else if (key.toLocaleLowerCase() == "c") {
+        complexStats = !complexStats;
+        draw();
     }
 });
