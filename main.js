@@ -1034,7 +1034,7 @@ class Enemy {
         this.attack = Math.max(1, Math.floor((rolled.dmg * Math.pow(1.03, fs) + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.hp = this.maxHp;
         this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * (0.35 + difficulty * 0.08)));
-        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1)));
+        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1) * 3/(2 * difficulty)));
         this.ac = rolled.ac
     }
     startBattle() {
