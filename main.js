@@ -60,6 +60,7 @@ function updateStats() {
     instructions[17] = `size:       ${W} x ${H}`;
     instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]}`
     instructions[19] = `best floor: ${best_floor}`;
+    checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
 }
 
 const air = " ";
@@ -89,6 +90,90 @@ let mainMenu = true;
 let Settings = false;
 let credits  = false;
 let help     = false;
+let start_config = false;
+let achivement_menu = false;
+
+// a smol list.
+let Classes = [
+    {"name":"Dude",         "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":true,  "best_floor":0,  "desc":"no buff"},   // baseline
+    {"name":"healer",       "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":true,  "best_floor":0,  "desc":"+15 hp per floor"},   // +15hp per floor
+    {"name":"theif",        "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":true,  "best_floor":0,  "desc":"+2 gold to all incomes"},   // + 2 gold to all incomes
+    {"name":"fighter",      "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":true,  "best_floor":0,  "desc":"x1.25 dammage"},   // x1.25 dammage.
+    {"name":"cat",          "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"+3 luck per levl"},  // +3 luck per levl
+    {"name":"gambler",      "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"35% 2x dmg, 50% x1, 15% x0"},  // 35% 2x dmg, 50% x1, 15% x0
+    {"name":"apprentice",   "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"start with skill of choice (will be tripled)"},  // start with skill of choice (will be tripled)
+    {"name":"alchemist",    "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"x2 potion affect"},  // x2 potion spawn or affect.
+    {"name":"forgotten",    "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"+5 extra skill triggers. and x2 dmg, no shop, no coins, no potions"},  // +5 extra skill triggers. and x2 dmg, no shop, no coins, no potions.
+    {"name":"imortal",      "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"block's dmg equal to the floor number"},  // - this.floor dmg
+    {"name":"merchant",     "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"deal more dmg with more money"},  // x(1+sqrt(p.money)/5) dmg
+    {"name":"executor",     "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"attack's once at start of combat"},  // deal 1 attack at start of combat
+    {"name":"tank",         "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"block 5dmg in each combat"},  // block first 5 dmg of each combat
+    {"name":"vampire",      "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"heals after each combat."},  // heal floor(attack/3) or 3 after combat.
+    {"name":"rober",        "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"steals cheapest item in shop."},  // steal cheapest item in shop.
+    {"name":"rich",         "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"start with a free common item and 13$"},  // start with a free common item and +13 starting $
+    {"name":"runner",       "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"+3 hp after fleeing, and +1 vision each floor"},  // +3 hp when you flee and +1 vision each floor
+    {"name":"gaurdian",     "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"more dmg with more hp"},  // attack += floor(hp/30) +20 starting hp
+    {"name":"batle mage",   "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"potions have a 10% chance to give +1 attack"},  // potions have a 10% chance to give +1 attack
+    {"name":"mystic",       "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"gain a bonus + evry 7 lvl's and attack is increased by luck"},  // gain a bonus + evry 7 levls. and attack += floor(luck/2)
+    {"name":"barbarian",    "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"x1.5 dmg, -5hp at start/end of floor"},  // x1.5 dammage. -5hp at start of floor
+    {"name":"trickster",    "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"+1 reroll token each floor, 10% to doge attacks"},  // +1 reroll token each floor, 10% to doge attacks
+    {"name":"monk",         "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"all gold becomes xp, no shop"},  // all gold becomes xp,  no shop
+    {"name":"greed",        "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false, "best_floor":0,  "desc":"all xp becomes gold, no skills"},  // all xp becomed gold, no skills
+
+    {"name":"shapeshifter", "GameStart":{},"LevelUp":{},"FloorStart":{},"BattleStart":{},"winBatle":{}, "unlocked":false}, // random class each floor. 
+] // 25 total classes
+let Class = Classes[0];
+let avail_classes = Classes;
+let si = 0;
+let ay = 0;
+window.lines = []
+
+let locked_achivements = [
+    // floor based
+    {"name":"The begining",     "desc":"get to floor 10","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 10);}},
+    {"name":"The Depths",       "desc":"get to floor 20","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20);}},
+    {"name":"Endless?",         "desc":"get to floor 30","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 30);}},
+    {"name":"Beyond the end",   "desc":"get to floor 40","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 40);}},
+    {"name":"How? just how",    "desc":"get to floor 50","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 50);}},
+    // money
+    {"name":"A doller!",        "desc":"obtain 100 coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100);}},
+    {"name":"A band!",          "desc":"obtain 1000 coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
+    {"name":"Broke explorer",   "desc":"have 0 coins on floor 20 or greater.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money == 0 && floor >= 20);}},
+    // hp
+    {"name":"First Death",      "desc":"die.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 0);}},
+    {"name":"dual heart",       "desc":"have 200+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 200);}},
+    {"name":"Five of hearts",   "desc":"have 500+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 500);}},
+    {"name":"Imortality?",      "desc":"have 1000+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 1000);}},
+    // attack
+    {"name":"baisc sword",      "desc":"have 25+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 25);}},
+    {"name":"sharpened sword",  "desc":"have 50+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 50);}},
+    {"name":"shiny sword",      "desc":"have 75+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 75);}},
+    {"name":"legendary sword",  "desc":"have 100+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 100);}},
+    {"name":"accended sword",   "desc":"have 500+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 500);}},
+    {"name":"god killer",       "desc":"have 1000+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 1000);}},
+    // luck
+    {"name":"Pure skill",       "desc":"have 0 luck on floor 20+.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck == 0 && floor >= 20);}},
+    {"name":"dice collector",   "desc":"have 5+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
+    {"name":"shiny penny",      "desc":"have 10+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 10);}},
+    {"name":"lucky cat",        "desc":"have 20+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 20);}},
+    {"name":"4 leaf clover",    "desc":"have 40+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 40);}},
+    {"name":"chosen fate",      "desc":"have 50+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 50);}},
+    // lvl
+    {"name":"basic adventurer", "desc":"reach lvl 10.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
+]
+let achivements = ["open the game"]
+
+function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) {
+    let i = 0
+    while (i < locked_achivements.length) {
+        if (locked_achivements[i].req(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty)) {
+            achivements.push(locked_achivements[i].name)
+            locked_achivements.splice(i,1)
+        } else {
+            i++;
+        }
+    }
+}
 
 let Death = null
 
@@ -264,6 +349,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     PM.spawn();
     PL.spawn();
     PX.spawn();
+    if (p) p.hp = p.hp + 10;
 }
 
 function copyRunSummary() {
@@ -305,9 +391,11 @@ function draw() {
             "",
             "",
             "1. PLAY",
-            "2. SETTINGS",
-            "3. CREDITS",
-            "4. help",
+            "2. Continue",
+            "3. SETTINGS",
+            "4. Achivements",
+            "5. CREDITS",
+            "6. help",
             "",
             border
         ];
@@ -465,8 +553,38 @@ function draw() {
             "> - stairs to next floor.",
             "? - fog / unknown tile",
             "",
+            "esc - go back to main menu",
+            "",
             border
         ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (achivement_menu) {
+        let lines = [
+            border,
+            "- s -- achivements -- w -",
+            "",
+        ];
+        for (let i = 0; i < achivements.length; i++) {
+            lines.push(`${achivements[i]}`);
+        }
+        lines.push("")
+        lines.push(" -- Locked --")
+        for (let i = 0; i < locked_achivements.length; i++) {
+            lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
+        }
+        lines.push("")
+        lines.push("esc - go back to main menu")
+        lines.push("")
+        lines.push(border)
+        window.lines = lines
+        ay = Math.max(0, Math.min(ay, Math.max(0, lines.length - Math.max(1, H - 5))));
+        lines = lines.slice(ay, ay + Math.max(1, H - 5));
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
             const text = line.slice(0, W);
@@ -497,6 +615,40 @@ function draw() {
             const text = line.slice(0, W);
             const left = Math.floor((W - text.length) / 2);
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (start_config) {
+        const lines = [
+            border,
+            "",
+            "-- class --",
+            "",
+            `Selected: ${Class.name} - ${Class.desc}`,
+            "",
+            `- s -- available classes -- w -`,
+            "",
+        ];
+        avail_classes = Classes.filter(c => c.unlocked);
+        si = Math.max(0, Math.min(si, avail_classes.length - 1));
+        const h = Math.max(1,H - 14)
+        let sy = Math.max(0, Math.min(si - Math.floor(h/2),avail_classes.length - h))
+        sy = si - Math.floor(h/2)
+        for (let i = 0; i < h && i < avail_classes.length; i++) {
+            let I = sy + i
+            I = ((I % avail_classes.length) + avail_classes.length) % avail_classes.length;
+            lines.push(`${I === si ? "*" : " "} ${avail_classes[I].name} - ${avail_classes[I].desc || ""}`);
+        }
+        lines.push('')
+        lines.push(`- a -- difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]} -- d -`)
+        lines.push('')
+        lines.push('0. play game')
+        lines.push('')
+        lines.push(border)
+        let display = "\n  " + " ".repeat(W + instructionWidth);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W + instructionWidth);
+            const left = Math.floor((W - text.length + instructionWidth) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left + instructionWidth);
         }
         body.innerText = display;
     } else {
@@ -530,12 +682,15 @@ class Player {
         this.luck   = 0
         this.lvl    = 0
         this.xp     = 0
+        // special stats
         this.sprint = 2
         this.skill_choices = 3;
         this.unique_options = [
             {"name":"bonus items", "func": () => {shop.avail = Math.min(10, shop.avail + 1);},"uses":7},
             {"name":"bonus skills", "func": () => {this.skill_choices = Math.min(10, this.skill_choices + 1);},"uses":5},
         ];
+        this.potion_spawn = 1;
+        this.potion_affect = 1;
         this.place(this.sym);
     }    
     
@@ -558,10 +713,10 @@ class Player {
             if (grid[nextY][nextX] == s.sym) {
                 goUp = true;
             } else if (grid[nextY][nextX] == m.sym) {
-                this.money += m.mult;
+                this.money += Math.floor((m.mult + 0.1) * Math.sqrt(this.floor));
                 updateStats();
             } else if ([PS.sym, PM.sym, PL.sym, PX.sym].includes(grid[nextY][nextX])) {
-                this.hp += [10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])]
+                this.hp += Math.floor([10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])] * p.potion_affect)
                 updateStats();
             }
             this.place(air);
@@ -881,18 +1036,12 @@ class Enemy {
         battle = {
             enemy: this,
             message: `A ${this.name} attacks!`,
-            parrying: false
         };
         draw();
     }
     enemyTurn(action) {
         if (!battle) return;
         let damage = Math.min(p.hp, battle.enemy.attack);
-        if (battle.parrying) {
-            battle.parrying = false;
-            damage = Math.max(0, damage - (p.attack - 1));
-            battle.enemy.hp = Math.max(0, battle.enemy.hp - Math.max(1, Math.floor(p.attack / 2)));
-        }
         p.hp -= damage;
         battle.message = `${action} -${damage} HP.`;
         if (p.hp <= 0) {
@@ -907,7 +1056,7 @@ class Enemy {
         if (!battle) return;
         let hit = Math.ceil(Math.random() * 100) + p.luck;
         let damage;
-        if (hit > this.monster.ac) {
+        if (hit > battle.enemy.ac) {
             damage = Math.max(1, p.attack);
         } else {
             damage = 0;
@@ -925,6 +1074,16 @@ class Enemy {
         }
         this.enemyTurn(`Hit ${damage}.`);
     }
+    flee() {
+        if (!battle) return;
+        if (Math.random() * (p.luck/10 + 1) < 0.5) {
+            gameMessage = "You escaped!";
+            battle = null;
+            draw();
+            return;
+        }
+        this.enemyTurn("Flee failed.");
+    }
     handleInput(key) {
         if (!battle) return;
         if (key === "1") {
@@ -933,8 +1092,8 @@ class Enemy {
             battle.message = "Items unavailable.";
             draw();
         } else if (key === "3") {
-            battle.parrying = true;
-            this.enemyTurn("You parry.");
+            this.flee();
+            draw();
         }
     }
 }
@@ -1008,13 +1167,8 @@ class potion {
         grid[y][x] = this.sym;
     }
     spawn () {
-        let factor;
-        if (p) {
-            factor = difficulty === 0 ? 1 : 1 + (p.luck / (difficulty + 0.5));
-        } else {
-            factor = 1;
-        }
-        this.a = this.w[Math.floor(Math.random() * this.w.length * factor)];
+        let factor = p ? 1 + (p.luck / 10) : 1;
+        this.a = Math.floor(this.w[Math.floor(Math.random() * this.w.length)] * factor * (p?p.potion_spawn:1));
         if (this.a > 0) {
             for (let i = 0; i < this.a; i++) {
                 this.place()
@@ -1090,20 +1244,34 @@ document.addEventListener("keydown", (event) => {
             Settings = false;
             credits  = false;
             help     = false;
+            start_config = true;
             reset();
             draw();
             return;
         } else if (key === "2") {
             mainMenu = false;
-            Settings = true;
+            Settings = false;
+            credits  = false;
+            help     = false;
+            start_config = false;
             draw();
             return;
         } else if (key === "3") {
             mainMenu = false;
-            credits = true;
+            Settings = true;
             draw();
             return;
         } else if (key === "4") {
+            mainMenu = false;
+            achivement_menu = true;
+            draw();
+            return;
+        } else if (key === "5") {
+            mainMenu = false;
+            credits = true;
+            draw();
+            return;
+        } else if (key === "6") {
             mainMenu = false;
             help = true;
             draw();
@@ -1183,6 +1351,44 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         }
+    } else if (start_config) {
+        if (avail_classes.length === 0) return;
+        if (key.toLocaleLowerCase() === "w") {
+            si = (si - 1 + avail_classes.length) % avail_classes.length;
+            Class = avail_classes[si];
+            draw();
+            return;
+        } 
+        if (key.toLocaleLowerCase() === "s") {
+            si = (si + 1) % avail_classes.length;
+            Class = avail_classes[si];
+            draw();
+            return;
+        } 
+        if (key.toLocaleLowerCase() === "a") {
+            difficulty = Math.max(0, difficulty - 1);
+            draw();
+            return;
+        } 
+        if (key.toLocaleLowerCase() === "d") {
+            difficulty = Math.min(6, difficulty +1);
+            draw();
+            return;
+        }
+        if (key === "0") {
+            start_config = false;
+        }
+    } else if (achivement_menu) {
+        if (key.toLocaleLowerCase() === "w") {
+            ay = Math.max(0,ay - 1)
+            draw();
+            return;
+        }
+        if (key.toLocaleLowerCase() === "s") {
+            ay = Math.min(Math.max(0, window.lines.length - Math.max(1, H - 5)), ay + 1);
+            draw();
+            return;
+        }
     }
 
     if (key === "m" || key === "M") {
@@ -1198,26 +1404,11 @@ document.addEventListener("keydown", (event) => {
     if (["w", "a", "s", "d"].includes(key)) {
         p.move(key, 1);
         draw();
-    } else if (key === "f") {
-        fogOn = !fogOn;
-        draw();
-    } else if (key === "[") {
-        fogMap.adjustRange(-1);
-        draw();
-    } else if (key === "]") {
-        fogMap.adjustRange(1);
-        draw();
     } else if (["W", "A", "S", "D"].includes(key)) {
         for (let i = 0; i < p.sprint; i++) {
             p.move(key.toLocaleLowerCase(), 1);
             draw();
         }
-    } else if (key == "-") {
-        difficulty = Math.max(0,difficulty - 1);
-        updateStats();
-    } else if (key == "=") {
-        difficulty = Math.min(6,difficulty + 1);
-        updateStats();
     } else if (key.toLocaleLowerCase() == "c") {
         complexStats = !complexStats;
         draw();
