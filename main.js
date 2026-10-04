@@ -23,6 +23,9 @@ let instructions = [
     "best time:  0:00 ",
     "size:       0 x 0",
     "difficulty: medium",
+    "class:      None  ",
+    "discount:   -0$   ",
+    "% discount: -0%   ",
     "best floor: 1     ",
     
 ]
@@ -59,7 +62,10 @@ function updateStats() {
     instructions[16] = `best time:  ${formatTime(t.best)}`;
     instructions[17] = `size:       ${W} x ${H}`;
     instructions[18] = `difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]}`
-    instructions[19] = `best floor: ${best_floor}`;
+    instructions[19] = `class:      ${Class.name}`;
+    instructions[20] = `discount:   -${shop.discount}$`;
+    instructions[21] = `% discount: -${shop.percent_discount}%`;
+    instructions[22] = `best floor: ${best_floor}`;
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
 }
 
@@ -937,7 +943,7 @@ class Enemy {
     constructor() {
         this.dc = 0
         this.chance = 10
-        this.cmax   = 1000
+        this.cmax   = W * H
         this.monsters = [
             // generic monsters
             {"name":"goblin",        "hp":12,           "dmg":[1,4],        "ac":1,       "gold":[2,5],        "xp":[1,6],     "lvl":0},
@@ -1033,8 +1039,8 @@ class Enemy {
         this.maxHp = Math.max(1, Math.floor((rolled.hp * Math.pow(1.06, fs) + p.floor * 0.6 + this.rate * 2) * difficultyScale));
         this.attack = Math.max(1, Math.floor((rolled.dmg * Math.pow(1.03, fs) + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.hp = this.maxHp;
-        this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * (0.35 + difficulty * 0.08)));
-        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * (0.5 + difficulty * 0.1) * 3/(2 * difficulty)));
+        this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor));
+        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * 0.75));
         this.ac = rolled.ac
     }
     startBattle() {
@@ -1065,7 +1071,7 @@ class Enemy {
         let hit = Math.ceil(Math.random() * 100) + p.luck;
         let damage;
         if (hit > battle.enemy.ac) {
-            damage = Math.max(1, p.attack * p.attack_mult);
+            damage = Math.max(1, Math.round(p.attack * p.attack_mult));
         } else {
             damage = 0;
         }

@@ -8,5 +8,7 @@ smallest window size is 22x22 in charters, and you can make it as big as you wan
 or 600 x 440.
 > Note: While though you can play the game on really small windows, it is reccomended that you play full screen.
 
+> Note: also difficulties are like hugely variented
+
 ![alt text](image-1.png)
 ![alt text](image.png)
