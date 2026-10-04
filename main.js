@@ -165,9 +165,23 @@ let locked_achivements = [
     {"name":"4 leaf clover",    "desc":"have 40+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 40);}},
     {"name":"chosen fate",      "desc":"have 50+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 50);}},
     // lvl
-    {"name":"basic adventurer", "desc":"reach lvl 10.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
+    {"name":"basic adventurer",        "desc":"reach lvl 10+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
+    {"name":"intermidiete adventurer", "desc":"reach lvl 20+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 20);}},
+    {"name":"advanced adventurer",     "desc":"reach lvl 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 30);}},
+    {"name":"expert adventurer",       "desc":"reach lvl 40+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 40);}},
+    {"name":"master adventurer",       "desc":"reach lvl 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 50);}},
+    {"name":"grand master adventurer", "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
+    // range
+    {"name":"basic eye's",             "desc":"have 10+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
+    {"name":"platnium eye",            "desc":"have 20+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
+    {"name":"third eye",               "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
+    {"name":"Glasses!",                "desc":"have 50+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50);}},
+    // unique. 
+    {"name":"speedrunner",             "desc":"reach floor 20+ in under 5min","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20 && trun < 300000);}},
+    {"name":"GOD mode",                "desc":"have 50+ vision, lvl 100+, 1000+ attack, 1000+ hp, and 1000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50 && lvl >= 100 && luck >= 50 && attack >= 1000 && hp >= 1000 && money >= 1000);}},
 ]
-let achivements = ["open the game"]
+
+let achivements = [{"name":"open the game","best":6}]
 
 function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) {
     let i = 0
@@ -357,7 +371,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     PM.spawn();
     PL.spawn();
     PX.spawn();
-    if (p) p.hp = p.hp + 10;
+    if (p && difficulty == 0) p.hp = p.hp + 10;
 }
 
 function copyRunSummary() {
@@ -579,7 +593,7 @@ function draw() {
             "",
         ];
         for (let i = 0; i < achivements.length; i++) {
-            lines.push(`${achivements[i]}`);
+            lines.push(`${achivements[i].name} - ${achivements[i].best}`);
         }
         lines.push("")
         lines.push(" -- Locked --")
@@ -1039,8 +1053,8 @@ class Enemy {
         this.maxHp = Math.max(1, Math.floor((rolled.hp * Math.pow(1.06, fs) + p.floor * 0.6 + this.rate * 2) * difficultyScale));
         this.attack = Math.max(1, Math.floor((rolled.dmg * Math.pow(1.03, fs) + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.hp = this.maxHp;
-        this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor));
-        this.moneyReward = Math.max(0, Math.floor(rolled.gold * 0.6 + p.floor * 0.75));
+        this.xpReward = Math.max(1, Math.floor(rolled.xp * 0.45 + p.floor * 0.45));
+        this.moneyReward = Math.max(0, Math.floor((rolled.gold * 0.6 + p.floor * 0.6) * 0.75));
         this.ac = rolled.ac
     }
     startBattle() {
