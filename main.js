@@ -125,8 +125,6 @@ let Classes = [
     {"name":"trickster",    "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+1 reroll token each floor, 10% to doge attacks"},  // +1 reroll token each floor, 10% to doge attacks
     {"name":"monk",         "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"all gold becomes xp, no shop"},  // all gold becomes xp,  no shop
     {"name":"greed",        "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"all xp becomes gold, no skills"},  // all xp becomed gold, no skills
-
-    {"name":"shapeshifter", "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{}, "unlocked":false}, // random class each floor. 
 ] // 25 total classes
 let Class = Classes[0];
 let avail_classes = Classes;
@@ -196,9 +194,18 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
                 if (difficulty > p.best) {
                     p.best = difficulty
                 }
-                
+                if (locked_achivements[i].name in Class.achivements.map(item => item.name)) {
+                    const P = Class.achivements[Class.achivements.map(item => item.name).indexOf(locked_achivements[i].name)]
+                    if (difficulty > P.best) {
+                        P.best = difficulty
+                    }
+                } else {
+                    Class.achivements[Class.achivements.map(item => item.name).indexOf(locked_achivements[i].name)].push({...locked_achivements[i],"best":difficulty})
+                    Classes[Classes.indexOf(Class)].achivements.push({...locked_achivements[i],"best":difficulty})
+                }
             }
             achivements.push({...locked_achivements[i],"best":difficulty})
+            Class.achivements[Class.achivements.map(item => item.name).indexOf(locked_achivements[i].name)].push({...locked_achivements[i],"best":difficulty})
             Classes[Classes.indexOf(Class)].achivements.push({...locked_achivements[i],"best":difficulty})
             //locked_achivements.splice(i,1)
         } else {
