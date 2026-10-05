@@ -105,10 +105,10 @@ let Classes = [
     {"name":"healer",       "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{p.hp = p.hp + 15;},     "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":true,  "best_floor":0,  "desc":"+15 hp per floor"},   // +15hp per floor
     {"name":"theif",        "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{p.money = p.money + 2;},"fleeBattle":()=>{},"coinPickup":()=>{p.money = p.money + 2;},"potionPickup":()=>{},  "unlocked":true,  "best_floor":0,  "desc":"+2 gold to all incomes"},   // + 2 gold to all incomes
     {"name":"fighter",      "GameStart":()=>{p.attack_mult = 1.25},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":true,  "best_floor":0,  "desc":"x1.25 dammage"},   // x1.25 dammage.
-    {"name":"cat",          "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+3 luck per levl"},  // +3 luck per levl
+    {"name":"cat",          "GameStart":()=>{},"LevelUp":()=>{p.luck = p.luck + 2},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+2 luck per levl"},  // +3 luck per levl
     {"name":"gambler",      "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"35% 2x dmg, 50% x1, 15% x0"},  // 35% 2x dmg, 50% x1, 15% x0
-    {"name":"apprentice",   "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"start with skill of choice (will be tripled)"},  // start with skill of choice (will be tripled)
-    {"name":"alchemist",    "GameStart":()=>{p.potion_spawn = 2},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"x2 potion spawn"},  // x2 potion spawn or affect.
+    {"name":"apprentice",   "GameStart":()=>{p.LevelUp()},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"start with skill of choice (will be tripled)"},  // start with skill of choice (will be tripled)
+    {"name":"alchemist",    "GameStart":()=>{p.potion_affect = 1.5},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"x2 potion spawn"},  // x2 potion spawn or affect.
     {"name":"forgotten",    "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+5 extra skill triggers. and x2 dmg, no shop, no coins, no potions"},  // +5 extra skill triggers. and x2 dmg, no shop, no coins, no potions.
     {"name":"imortal",      "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"block's dmg equal to the floor number"},  // - this.floor dmg
     {"name":"merchant",     "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"deal more dmg with more money"},  // x(1+sqrt(p.money)/5) dmg
@@ -117,9 +117,9 @@ let Classes = [
     {"name":"vampire",      "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"heals after each combat."},  // heal floor(attack/3) or 3 after combat.
     {"name":"rober",        "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"steals cheapest item in shop."},  // steal cheapest item in shop.
     {"name":"rich",         "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"start with a free common item and 13$"},  // start with a free common item and +13 starting $
-    {"name":"runner",       "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+3 hp after fleeing, and +1 vision each floor"},  // +3 hp when you flee and +1 vision each floor
+    {"name":"runner",       "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{p.range = p.range + 1},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+1 vision each floor"},  // +3 hp when you flee and +1 vision each floor
     {"name":"gaurdian",     "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"more dmg with more hp"},  // attack += floor(hp/30) +20 starting hp
-    {"name":"batle mage",   "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"potions have a 10% chance to give +1 attack"},  // potions have a 10% chance to give +1 attack
+    {"name":"batle mage",   "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{ p.attack = p.attack + 1},  "unlocked":false, "best_floor":0,  "desc":"potions have a 10% chance to give +1 attack"},  // potions have a 10% chance to give +1 attack
     {"name":"mystic",       "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"gain a bonus + evry 7 lvl's and attack is increased by luck"},  // gain a bonus + evry 7 levls. and attack += floor(luck/2)
     {"name":"barbarian",    "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"x1.5 dmg, -5hp at start/end of floor"},  // x1.5 dammage. -5hp at start of floor
     {"name":"trickster",    "GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},                      "BattleStart":()=>{},"winBatle":()=>{},                      "fleeBattle":()=>{},"coinPickup":()=>{},                      "potionPickup":()=>{},  "unlocked":false, "best_floor":0,  "desc":"+1 reroll token each floor, 10% to doge attacks"},  // +1 reroll token each floor, 10% to doge attacks
@@ -182,19 +182,30 @@ let locked_achivements = [
 ]
 
 let achivements = [{"name":"open the game","best":6}]
+for (let i = 0; i < Classes.length; i++) {
+    Classes[i].achivements = achivements
+}
+
 
 function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) {
     let i = 0
     while (i < locked_achivements.length) {
         if (locked_achivements[i].req(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty)) {
-            achivements.push(locked_achivements[i].name)
-            locked_achivements.splice(i,1)
+            if (locked_achivements[i].name in achivements.map(item => item.name)) {
+                const p = achivements[achivements.map(item => item.name).indexOf(locked_achivements[i].name)]
+                if (difficulty > p.best) {
+                    p.best = difficulty
+                }
+                
+            }
+            achivements.push({...locked_achivements[i],"best":difficulty})
+            Classes[Classes.indexOf(Class)].achivements.push({...locked_achivements[i],"best":difficulty})
+            //locked_achivements.splice(i,1)
         } else {
             i++;
         }
     }
-    Classes[Classes.indexOf(Class)].best_floor = floor > Classes[Classes.indexOf(Class)].best_floor ? floor : Classes[Classes.indexOf(Class)].best_floor
-
+    Classes[Classes.indexOf(Class)].best_floor = floor > Classes[Classes.indexOf(Class)].best_floor ? floor : Classes[Classes.indexOf(Class)].best_floor   
 }
 
 let Death = null
