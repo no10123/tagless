@@ -10,6 +10,9 @@ or 600 x 440.
 
 > Note: have fun.
 
+![alt text](image-1.png)
+![alt text](image.png)
+
 Classes:
 
 - Dude - no buff
@@ -86,8 +89,5 @@ Achievements:
 - speedrunner - reach floor 20+ in under 5 minutes - 1.15%
 - GOD mode - have 50+ vision, 50+ luck, level 100+, 1000+ attack, 1000+ hp, and 1000+ money - 0.00%
 - SIX - SEVEN - have 67 attack, 67 hp, level 67, and 67 coins - 0.00%
-
-![alt text](image-1.png)
-![alt text](image.png)
 
 > Credits: me - robopugo - no10123. - only took 29hrs to make. 

@@ -47,8 +47,8 @@ function xpRequiredForLevel(level) {
 }
 
 function updateStats() {
-    if (Class.goldToXp) p.xp = p.xp + p.money; p.money = 0
-    if (Class.xpToGold) p.money = p.money + p.xp; p.xp = 0
+    if (Class.goldToXp) {p.xp = p.xp + p.money; p.money = 0;};
+    if (Class.xpToGold) {p.money = p.money + p.xp; p.xp = 0;};
     instructions[4]  = `floor:      ${p.floor}`;
     instructions[5]  = `money:      ${p.money}$`;
     instructions[6]  = `hp:         ${p.hp}`;
@@ -102,80 +102,118 @@ let start_config = false;
 let achivement_menu = false;
 window.ClassAchivement = false;
 
+let si = 0;
+let ay = 0;
+
 // a smol list.
+// default behaviour
+const BASE = {"GameStart":() => {},"LevelUp":() => {},"FloorStart":() => {},"BattleStart":() => {},
+    "winBatle":() => {},"fleeBattle":() => {},"coinPickup":() => {},"potionPickup":() => {},
+    "OnAttack":d => d,"OnDamage":d => d,"unlocked":false,"best_floor":0};
+
 let Classes = [
-    {"name":"Dude","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":true,"best_floor":0,"desc":"no buff"}, // baseline
-    {"name":"healer","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{p.hp = p.hp + 15;},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":true,"best_floor":0,"desc":"+15 hp per floor"}, // +15hp per floor
-    {"name":"theif","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{p.money = p.money + 2;},"fleeBattle":()=>{},"coinPickup":()=>{p.money = p.money + 2;},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":true,"best_floor":0,"desc":"+2 gold to all incomes"}, // + 2 gold to all incomes
-    {"name":"fighter","GameStart":()=>{p.attack_mult = 1.25},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":true,"best_floor":0,"desc":"x1.25 dammage"}, // x1.25 dammage.
-    {"name":"cat","GameStart":()=>{},"LevelUp":()=>{p.luck = p.luck + 2},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"+2 luck per levl"}, // +3 luck per levl
-    {"name":"gambler","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"35% 2x dmg, 50% x1, 15% x0"}, // 35% 2x dmg, 50% x1, 15% x0
-    {"name":"apprentice","GameStart":()=>{p.LevelUp()},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"start with skill of choice (will be tripled)"}, // start with skill of choice (will be tripled)
-    {"name":"alchemist","GameStart":()=>{p.potion_affect = 1.5},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"x1.5 potion affect"}, // x2 potion spawn or affect.
-    {"name":"forgotten","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"noShop":true,"best_floor":0,"desc":"+5 extra skill triggers. and x2 dmg, no shop, no coins, no potions"}, // +5 extra skill triggers. and x2 dmg, no shop, no coins, no potions.
-    {"name":"imortal","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"block's dmg equal to the floor number"}, // - this.floor dmg
-    {"name":"merchant","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"deal more dmg with more money"}, // x(1+sqrt(p.money)/5) dmg
-    {"name":"executor","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"attack's once at start of combat"}, // deal 1 attack at start of combat
-    {"name":"tank","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"block 5dmg in each combat"}, // block first 5 dmg of each combat
-    {"name":"vampire","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"heals after each combat."}, // heal floor(attack/3) or 3 after combat.
-    {"name":"rober","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"steals cheapest item in shop."}, // steal cheapest item in shop.
-    {"name":"rich","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"start with a free common item and 13$"}, // start with a free common item and +13 starting $
-    {"name":"runner","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{p.range = p.range + 1},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"+1 vision each floor"}, // +3 hp when you flee and +1 vision each floor
-    {"name":"gaurdian","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"more dmg with more hp"}, // attack += floor(hp/30) +20 starting hp
-    {"name":"batle mage","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{p.attack = p.attack + 1},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"potions have a 10% chance to give +1 attack"}, // potions have a 10% chance to give +1 attack
-    {"name":"mystic","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{p.attack = p.attack + p.luck},"winBatle":()=>{p.attack = p.attack - p.luck},"fleeBattle":()=>{p.attack = p.attack - p.luck},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"gain a bonus + evry 7 lvl's and attack is increased by luck"}, // gain a bonus + evry 7 levls. and attack += floor(luck/2)
-    {"name":"barbarian","GameStart":()=>{p.attack_mult = 1.5},"LevelUp":()=>{},"FloorStart":()=>{p.hp = p.hp - 5},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"x1.5 dmg, -5hp at start/end of floor"}, // x1.5 dammage. -5hp at start of floor
-    {"name":"trickster","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"best_floor":0,"desc":"+1 reroll token each floor, 10% to doge attacks"}, // +1 reroll token each floor, 10% to doge attacks
-    {"name":"monk","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"goldToXp":true,"best_floor":0,"desc":"all gold becomes xp, no shop"}, // all gold becomes xp,  no shop
-    {"name":"greed","GameStart":()=>{},"LevelUp":()=>{},"FloorStart":()=>{},"BattleStart":()=>{},"winBatle":()=>{},"fleeBattle":()=>{},"coinPickup":()=>{},"potionPickup":()=>{},"OnAttack":()=>{},"OnDamage":()=>{},"unlocked":false,"xpToGold":true,"best_floor":0,"desc":"all xp becomes gold, no skills"} // all xp becomed gold, no skills
-] // 25 total classes
+    {...BASE, "name":"Dude", "unlocked":true, "desc":"no buff"},
+    {...BASE, "name":"healer", "unlocked":true, "FloorStart":()=>{p.hp += 15;}, "desc":"+15 hp per floor"},
+    {...BASE, "name":"theif", "unlocked":true, "winBatle":()=>{p.money += 2;}, "coinPickup":()=>{p.money += 2;}, "desc":"+2 gold to all incomes"},
+    {...BASE, "name":"fighter", "unlocked":true, "GameStart":()=>{p.attack_mult = 1.25;}, "desc":"x1.25 damage"},
+    {...BASE, "name":"cat", "LevelUp":()=>{p.luck += 2;}, "desc":"+2 luck per level"},
+    {...BASE, "name":"gambler", "OnAttack":(d)=>{const r=Math.random(); return r<0.35 ? d*2 : r<0.85 ? d : 0;}, "desc":"35% 2x dmg, 50% x1, 15% x0"},
+    {...BASE, "name":"apprentice", "GameStart":()=>{skill_selection = p.rollSkillSelection();}, "desc":"start with skill of choice (will be tripled)"},
+    {...BASE, "name":"alchemist", "GameStart":()=>{p.potion_affect = 1.5;}, "desc":"x1.5 potion effect"},
+    {...BASE, "name":"forgotten", "noShop":true, "noCoins":true, "noPotions":true, "extraTriggers":5,
+        "GameStart":()=>{p.attack_mult = 2;}, "desc":"+5 extra skill triggers and x2 dmg, no shop, no coins, no potions"},
+    {...BASE, "name":"imortal", "OnDamage":(d)=>Math.max(0, d - p.floor), "desc":"blocks damage equal to the floor number"},
+    {...BASE, "name":"merchant", "OnAttack":(d)=>d * (1 + Math.sqrt(p.money) / 10), "desc":"deal more damage with more money"},
+    {...BASE, "name":"executor", "BattleStart":()=>{
+        battle.enemy.hp = Math.max(0, battle.enemy.hp - Math.max(1, Math.round(p.attack * p.attack_mult)));
+        if (battle.enemy.hp === 0) winBattle();
+    }, "desc":"attacks once at start of combat"},
+    {...BASE, "name":"tank", "BattleStart":()=>{battle.blockLeft = 5;},
+        "OnDamage":(d)=>{const b = Math.min(d, battle.blockLeft || 0); battle.blockLeft -= b; return d - b;},
+        "desc":"blocks 5 damage in each combat"},
+    {...BASE, "name":"vampire", "winBatle":()=>{p.hp += Math.max(3, Math.floor(p.attack / 3));}, "desc":"heals after each combat"},
+    {...BASE, "name":"rober", "FloorStart":()=>{
+        if (!shopState) return;
+        let best = -1;
+        for (let i = 0; i < shopState.offers.length; i++) {
+            const o = shopState.offers[i];
+            if (!o.purchased && (best === -1 || o.cost < shopState.offers[best].cost)) best = i;
+        }
+        if (best !== -1) { shopState.offers[best].func(); shopState.offers[best].purchased = true; p.check_lvl(); }
+    }, "desc":"steals the cheapest item in the shop"},
+    {...BASE, "name":"rich", "GameStart":()=>{p.money += 13;
+        const commons = shop.shopPool.filter(i=>i.rarity==="common");
+        commons[Math.floor(Math.random()*commons.length)].func(); p.check_lvl();
+    }, "desc":"starts with a free common item and 13 gold"},
+    {...BASE, "name":"runner", "FloorStart":()=>{fogMap.adjustRange(1);}, "desc":"+1 vision each floor"},
+    {...BASE, "name":"gaurdian", "GameStart":()=>{p.hp += 20;}, "OnAttack":(d)=>d + Math.floor(p.hp / 30), "desc":"more damage with more hp"},
+    {...BASE, "name":"batle mage", "potionPickup":()=>{if (Math.random() < 0.1) p.attack += 1;}, "desc":"potions have a 10% chance to give +1 attack"},
+    {...BASE, "name":"mystic", "LevelUp":(skill)=>{if (p.lvl % 7 === 0 && skill) skill.func();},
+        "BattleStart":()=>{p.attack += p.luck;}, "winBatle":()=>{p.attack -= p.luck;}, "fleeBattle":()=>{p.attack -= p.luck;},
+        "desc":"gains a bonus every 7 levels and attack is increased by luck"},
+    {...BASE, "name":"barbarian", "GameStart":()=>{p.attack_mult = 1.5;}, "FloorStart":()=>{p.hp -= 5;}, "desc":"x1.5 damage, -5 hp at start of floor"},
+    {...BASE, "name":"trickster", "FloorStart":()=>{reroll_tokens++;}, "OnDamage":(d)=>Math.random() < 0.1 ? 0 : d, "desc":"+1 reroll token each floor, 10% to dodge attacks"},
+    {...BASE, "name":"monk", "goldToXp":true, "desc":"all gold becomes xp, no shop"},
+    {...BASE, "name":"greed", "xpToGold":true, "desc":"all xp becomes gold, no skills"},
+]
+ // 25 total classes
 let Class = Classes[0];
 let avail_classes = Classes;
 
+function winBattle() {
+    p.xp   += Class.goldToXp ? battle.enemy.moneyReward * 2 : (Class.xpToGold ? 0 : battle.enemy.xpReward);
+    p.money += Class.xpToGold ? (battle.enemy.xpReward + battle.enemy.moneyReward) : (Class.goldToXp ? 0 : battle.enemy.moneyReward);
+    Class.winBatle(); 
+    battle = null; 
+    p.check_lvl(); 
+    updateStats(); 
+    draw();
+}
+
 let locked_achivements = [
     // floor based
-    {"name":"The begining",     "desc":"get to floor 10","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 10);}},
-    {"name":"The Depths",       "desc":"get to floor 20","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20);}},
-    {"name":"Endless?",         "desc":"get to floor 30","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 30);}},
-    {"name":"Beyond the end",   "desc":"get to floor 40","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 40);}},
-    {"name":"How? just how",    "desc":"get to floor 50","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 50);}},
+    {"name":"The begining",     "desc":"get to floor 10","unlock":"gambler","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 10);}},
+    {"name":"The Depths",       "desc":"get to floor 20","unlock":"runner","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20);}},
+    {"name":"Endless?",         "desc":"get to floor 30","unlock":"alchemist","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 30);}},
+    {"name":"Beyond the end",   "desc":"get to floor 40","unlock":"forgotten","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 40);}},
+    {"name":"How? just how",    "desc":"get to floor 50","unlock":"imortal","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 50);}},
     // money
-    {"name":"A doller!",        "desc":"obtain 100 coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100);}},
-    {"name":"A band!",          "desc":"obtain 1000 coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
+    {"name":"A doller!",        "desc":"obtain 100 coins.","unlock":"rober","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100);}},
+    {"name":"A band!",          "desc":"obtain 1000 coins.","unlock":"rich","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
     {"name":"Broke explorer",   "desc":"have 0 coins on floor 20 or greater.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money == 0 && floor >= 20);}},
     // hp
-    {"name":"First Death",      "desc":"die.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 0);}},
-    {"name":"dual heart",       "desc":"have 200+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 200);}},
-    {"name":"Five of hearts",   "desc":"have 500+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 500);}},
+    {"name":"First Death",      "desc":"die.","unlock":"tank","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 0);}},
+    {"name":"dual heart",       "desc":"have 200+ hp.","unlock":"vampire","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 200);}},
+    {"name":"Five of hearts",   "desc":"have 500+ hp.","unlock":"gaurdian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 500);}},
     {"name":"Imortality?",      "desc":"have 1000+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 1000);}},
     // attack
-    {"name":"baisc sword",      "desc":"have 25+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 25);}},
-    {"name":"sharpened sword",  "desc":"have 50+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 50);}},
-    {"name":"shiny sword",      "desc":"have 75+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 75);}},
-    {"name":"legendary sword",  "desc":"have 100+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 100);}},
+    {"name":"baisc sword",      "desc":"have 25+ attack.","unlock":"apprentice","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 25);}},
+    {"name":"sharpened sword",  "desc":"have 50+ attack.","unlock":"executor","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 50);}},
+    {"name":"shiny sword",      "desc":"have 75+ attack.","unlock":"barbarian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 75);}},
+    {"name":"legendary sword",  "desc":"have 100+ attack.","unlock":"merchant","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 100);}},
     {"name":"accended sword",   "desc":"have 500+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 500);}},
     {"name":"god killer",       "desc":"have 1000+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 1000);}},
     // luck
-    {"name":"Pure skill",       "desc":"have 0 luck on floor 20+.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck == 0 && floor >= 20);}},
-    {"name":"dice collector",   "desc":"have 5+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
+    {"name":"Pure skill",       "desc":"have 0 luck on floor 20+.","unlock":"monk","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck == 0 && floor >= 20);}},
+    {"name":"dice collector",   "desc":"have 5+ luck.","unlock":"cat","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
     {"name":"shiny penny",      "desc":"have 10+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 10);}},
     {"name":"lucky cat",        "desc":"have 20+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 20);}},
     {"name":"4 leaf clover",    "desc":"have 40+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 40);}},
     {"name":"chosen fate",      "desc":"have 50+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 50);}},
     // lvl
-    {"name":"basic adventurer",        "desc":"reach lvl 10+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
-    {"name":"intermidiete adventurer", "desc":"reach lvl 20+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 20);}},
+    {"name":"basic adventurer",        "desc":"reach lvl 10+","unlock":"mystic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
+    {"name":"intermidiete adventurer", "desc":"reach lvl 20+","unlock":"greed","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 20);}},
     {"name":"advanced adventurer",     "desc":"reach lvl 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 30);}},
     {"name":"expert adventurer",       "desc":"reach lvl 40+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 40);}},
     {"name":"master adventurer",       "desc":"reach lvl 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 50);}},
     {"name":"grand master adventurer", "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
     // range
-    {"name":"basic eye's",             "desc":"have 10+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
+    {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"battle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
     {"name":"platnium eye",            "desc":"have 20+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
     {"name":"third eye",               "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
     {"name":"Glasses!",                "desc":"have 50+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50);}},
     // unique. 
-    {"name":"speedrunner",             "desc":"reach floor 20+ in under 5min","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20 && trun < 300000);}},
+    {"name":"speedrunner",             "desc":"reach floor 20+ in under 5min","unlock":"trickster","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20 && trun < 300000);}},
     {"name":"GOD mode",                "desc":"have 50+ vision, 50+ luck, lvl 100+, 1000+ attack, 1000+ hp, and 1000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50 && lvl >= 100 && luck >= 50 && attack >= 1000 && hp >= 1000 && money >= 1000);}},
     {"name":"SIX - SEVEN",             "desc":"have 67 attack, 67 hp, lvl 67, 67 coins","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl == 67 && attack == 67 && hp == 67 && money == 67);}},
 ]
@@ -195,8 +233,13 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
             if (difficulty > globalEntry.best) globalEntry.best = difficulty;
         } else {
             achivements.push({name: a.name, desc: a.desc, best: difficulty});
+            if (a.unlock) {
+                const c = Classes.find(x => x.name === a.unlock);
+                if (c && !c.unlocked) {
+                    c.unlocked = true;
+                }
+            }
         }
-
         const classEntry = Class.achivements.find(x => x.name === a.name);
         if (classEntry) {
             if (difficulty > classEntry.best) classEntry.best = difficulty;
@@ -205,7 +248,9 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
         }
     }
     if (floor > Class.best_floor) Class.best_floor = floor;
+    saveProgress();
 }
+
 
 
 let Death = null
@@ -378,10 +423,12 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
 
     fogMap.reset();
     t.NewFloor();
-    PS.spawn();
-    PM.spawn();
-    PL.spawn();
-    PX.spawn();
+    if (!Class.noPotions) {
+        PS.spawn(); 
+        PM.spawn(); 
+        PL.spawn(); 
+        PX.spawn();
+    }
     if (p && difficulty == 0) p.hp = p.hp + 10;
 }
 
@@ -418,6 +465,8 @@ function draw() {
         Settings = false;
         credits  = false;
         help     = false;
+        achivement_menu = false; 
+        start_config = false; 
         const lines = [
             border,
             "WELCOME TO THE DUNGEON",
@@ -778,7 +827,7 @@ class Player {
             this.lvl++
             this.xp = this.xp - reqxp
             this.options = [
-                {"name":"sharpen sword", "func": () => {p.attack++;}},
+                {"name":"sharpen sword", "func": () => {p.attack = p.attack + Class.goldToXp ? 3 : 1;}},
                 {"name":"health boost",      "func": () => {p.hp += 8 + p.lvl * 2;}},
                 {"name":"quick buck",      "func": () => {p.money = p.money + 3 * m.mult;}},
                 {"name":"luck bonus",    "func": () => {p.luck++;}},
@@ -810,7 +859,7 @@ class Player {
     }
 
     selectSkill(skill) {
-        Class.LevelUp();
+        Class.LevelUp(skill);
         if (this.lvl % 10 == 0) {
             skill.func();
         }  
@@ -818,6 +867,7 @@ class Player {
             skill.func();
         }   
         skill.func();
+        for (let i = 0; i < (Class.extraTriggers || 0); i++) skill.func();
         const uniqueIndex = this.unique_options.indexOf(skill);
         if (uniqueIndex !== -1) {
             if (this.lvl % 10 == 0) {
@@ -876,10 +926,10 @@ class stairs {
             ]),
             brush: Math.random() < 0.8 ? 1 : 2
         });
-        new Money(m.sym);
+        if (!Class.noCoins) new Money(m.sym);
         p.place("@");
         this.place();
-        if (Class.noshop) shopState = shop.open(p.floor);
+        if (!Class.noShop && !Class.goldToXp) shopState = shop.open(p.floor);
         Class.FloorStart();
         updateStats();
         draw();
@@ -1077,18 +1127,18 @@ class Enemy {
     }
     startBattle() {
         if (battle) return;
-        Class.BattleStart();
         gameMessage = "";
         battle = {
             enemy: this,
             message: `A ${this.name} attacks!`,
         };
+        Class.BattleStart();
         draw();
     }
     enemyTurn(action) {
         if (!battle) return;
-        Class.OnDamage();
         let damage = Math.min(p.hp, battle.enemy.attack);
+        damage = Class.OnDamage(damage);
         p.hp -= damage;
         battle.message = `${action} -${damage} HP.`;
         if (p.hp <= 0) {
@@ -1101,24 +1151,16 @@ class Enemy {
     }
     playerAttack() {
         if (!battle) return;
-        Class.OnAttack();
         let hit = Math.ceil(Math.random() * 100) + p.luck;
         let damage;
         if (hit > battle.enemy.ac) {
-            damage = Math.max(1, Math.round(p.attack * p.attack_mult));
+            damage = Math.max(0, Class.OnAttack(Math.round(p.attack * p.attack_mult)));
         } else {
             damage = 0;
         }
         battle.enemy.hp = Math.max(0, battle.enemy.hp - damage);
         if (battle.enemy.hp === 0) {
-            p.xp += battle.enemy.xpReward;
-            p.money += battle.enemy.moneyReward;
-            gameMessage = `Won! +${battle.enemy.xpReward}xp +$${battle.enemy.moneyReward}`;
-            battle = null;
-            Class.winBatle();
-            p.check_lvl();
-            updateStats();
-            draw();
+            winBattle();
             return;
         }
         this.enemyTurn(`Hit ${damage}.`);
@@ -1430,6 +1472,13 @@ document.addEventListener("keydown", (event) => {
         if (key === "0") {
             start_config = false;
             Class.GameStart();
+            if (Class.noCoins || Class.noPotions) {
+                for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                    if (Class.noCoins && grid[y][x] === "$") grid[y][x] = air;
+                    if (Class.noPotions && "phPH".includes(grid[y][x])) grid[y][x] = air;
+                }
+                draw();
+            }
         }
         if (key === "Enter") {
             achivement_menu = true
@@ -1475,3 +1524,25 @@ document.addEventListener("keydown", (event) => {
         draw();
     }
 });
+
+// saves progress
+function saveProgress() {
+    localStorage.setItem("tagless_progress", JSON.stringify({
+        best_floor,
+        achivements,
+        classes: Object.fromEntries(Classes.map(c => [c.name, {
+            unlocked: c.unlocked, best_floor: c.best_floor, achivements: c.achivements
+        }]))
+    }));
+}
+const saved = JSON.parse(localStorage.getItem("tagless_progress") || "null");
+if (saved) {
+    best_floor = saved.best_floor || 1;
+    achivements = saved.achivements || achivements;
+    for (const c of Classes) {
+        const s = saved.classes && saved.classes[c.name];
+        if (s) { c.unlocked = s.unlocked; c.best_floor = s.best_floor || 0; c.achivements = s.achivements || c.achivements; }
+    }
+}
+
+
