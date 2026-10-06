@@ -47,19 +47,19 @@ Classes:
 - gladiator - -50hp gain half of all dmg as coins
 
 rankings:
-Tier - Classeshttps://github.com/no10123/tagless/blob/main/README.md
+Tier - Classes
 
 S - broken     - immortal, alchemist, cat
 
-A - verry good - merchant, vampire, runner
+A - verry good - merchant, vampire, runner, investor, scavenger
 
-B - good       - guardian, executor, barbarian, tank, healer, thief, fighter, apprentice, rich, robber
+B - good       - guardian, executor, barbarian, tank, healer, thief, fighter, apprentice, rich, robber, gladiator
 
-C - ok         - gambler, battle mage
+C - ok         - gambler, battle mage, bladesmith
 
 D - baseline   - Dude, mystic
 
-E - challenge  - monk, greed, forgotten
+E - challenge  - monk, greed, forgotten, cyadian (good but can have unlucky runs), Deserter
 
 
 Achievements:
