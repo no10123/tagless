@@ -39,16 +39,28 @@ Classes:
 - trickster - +1 reroll token each floor, 10% to dodge attacks
 - monk - all gold becomes xp, no shop
 - greed - all xp becomes gold, no skills
+- investor - gain 10% money on floor end.
+- Deserter - fleeing gives xp, no money nor shop
+- scavenger - potions give money, coins give hp
+- bladesmith - +1 attack each lvl
+- cyadian - max speed and sprint, sprint decreases each floor and gain +1 ttack each floor - cyadonia refrence
+- gladiator - -50hp gain half of all dmg as coins
 
 rankings:
-Tier - Classes
+Tier - Classeshttps://github.com/no10123/tagless/blob/main/README.md
 
 S - broken     - immortal, alchemist, cat
+
 A - verry good - merchant, vampire, runner
+
 B - good       - guardian, executor, barbarian, tank, healer, thief, fighter, apprentice, rich, robber
+
 C - ok         - gambler, battle mage
+
 D - baseline   - Dude, mystic
+
 E - challenge  - monk, greed, forgotten
+
 
 Achievements:
 
