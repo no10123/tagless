@@ -91,3 +91,4 @@ Achievements:
 - SIX - SEVEN - have 67 attack, 67 hp, level 67, and 67 coins - 0.00%
 
 > Credits: me - robopugo - no10123. - only took 29hrs to make. 
+   
