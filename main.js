@@ -71,6 +71,9 @@ function updateStats() {
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
 }
 
+const konami = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+let konami_i = 0;
+
 const air = " ";
 const wall = "#";
 
@@ -279,6 +282,7 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
 
 
 let Death = null
+let deathCause = "";
 
 let reroll_tokens = 0;
 
@@ -485,7 +489,7 @@ function copyRunSummary() {
         `Money: ${p.money}$`,
         `Time: ${formatTime(t.run)}`,
         `Best floor: ${best_floor}`,
-        `Score: ${p.floor * 1000 + p.money + p.lvl * 50}`
+        `Score: ${Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25))}`
     ].join(" | ");
 
     navigator.clipboard.writeText(summary)
@@ -521,6 +525,8 @@ function draw() {
             "5. CREDITS",
             "6. help",
             "7. leaderboard",
+            "",
+            `best score: ${localStorage.getItem("tagless_best") || 0}`,
             "",
             border
         ];
@@ -736,7 +742,9 @@ function draw() {
             `money: ${p.money}$`,
             `Time: ${t.run}`,
             "",
-            `score: ${p.floor * 1000 + p.money + p.lvl * 50}`,
+            `score: ${Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25))}`,
+            "",
+            `killed by ${deathCause}`,
             "",
             gameMessage ? gameMessage : "0 to copy stats.",
             "1 to send score to servers",
@@ -748,6 +756,11 @@ function draw() {
             const text = line.slice(0, W);
             const left = Math.floor((W - text.length) / 2);
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
+        if (score > +localStorage.getItem("tagless_best") || !localStorage.getItem("tagless_best")) {
+            localStorage.setItem("tagless_best", score);
+            notify("NEW BEST", score);
         }
         body.innerText = display;
     } else if (start_config) {
@@ -1210,6 +1223,7 @@ class Enemy {
         p.hp -= damage;
         battle.message = `${action} -${damage} HP.`;
         if (p.hp <= 0) {
+            deathCause = `a ${battle.enemy.name}`;
             battle = null;
             Death = true;
             draw();
@@ -1392,21 +1406,23 @@ document.addEventListener("keydown", (event) => {
         music.INPUT = true;
     }
     const key = event.key;
+    if (key === konami[konami_i]) { konami_i++; if (konami_i === konami.length) { konami_i = 0; notify("KONAMI", "easter egg"); } } else konami_i = (key === konami[0] ? 1 : 0);
+    
     if (Death) {
         if (key === "0") {
             copyRunSummary();
             return;
         }
-        if (key.toLowerCase() === "l") {
+        if (key.toLowerCase() === "1") {
             // posts score and stats
-            const score = p.floor * 1000 + p.money + p.lvl * 50;
+            const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
             const name = (prompt("name for leaderboard:", localStorage.getItem("tagless_name") || "") || "anonymous").trim().slice(0, 12);
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
             fetch("https://api.github.com/repos/no10123/tagless-scores/issues", {
                 method: "POST",
                 headers: {"Authorization": "token " + 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, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
-                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)}`,
+                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
                     labels: ["score"],
                     body: JSON.stringify({score, floor, lvl, money, cls: Class.name, time: t.run})
                 })
