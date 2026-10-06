@@ -1420,7 +1420,7 @@ document.addEventListener("keydown", (event) => {
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
             fetch("https://api.github.com/repos/no10123/tagless-scores/issues", {
                 method: "POST",
-                headers: {"Authorization": "token " + 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, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
+                headers: {"Authorization": "token " + "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", "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
                     title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
                     labels: ["score"],
