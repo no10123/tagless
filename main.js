@@ -3,6 +3,8 @@ let W = 41;
 let H = 21;
 let grid = [];
 let best_floor = 1
+require('dotenv').config();
+const token = process.env.GITHUB_TOKEN;
 let instructions = [
     "inputs:          ",
     " wasd to move,   ",
@@ -1482,7 +1484,7 @@ document.addEventListener("keydown", (event) => {
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
             fetch("https://api.github.com/repos/no10123/tagless/issues", {
                 method: "POST",
-                headers: {"Authorization": "token " + "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", "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
+                headers: {"Authorization": "token " + token, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
                     title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
                     labels: ["score"],
