@@ -198,12 +198,14 @@ let locked_achivements = [
     {"name":"Endless?",         "desc":"get to floor 30","unlock":"alchemist","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 30);}},
     {"name":"Beyond the end",   "desc":"get to floor 40","unlock":"forgotten","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 40);}},
     {"name":"How? just how",    "desc":"get to floor 50","unlock":"imortal","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 50);}},
+    {"name":"Forever above",    "desc":"get to floor 100","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 100);}},
     // money
     {"name":"A doller!",        "desc":"obtain 100+ coins.","unlock":"rober","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100);}},
     {"name":"A band!",          "desc":"obtain 1000+ coins.","unlock":"rich","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
     {"name":"money collector",  "desc":"obtain 5000+ coins.","unlock":"scavenger","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 5000);}},
     {"name":"walking bank",     "desc":"obtain 10000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 10000);}},
     {"name":"Gold certificate", "desc":"obtain 100000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100000);}},
+    {"name":"Millionaire!",     "desc":"obtain 1000000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000000);}},
     {"name":"Broke explorer",   "desc":"have 0 coins on floor 20 or greater.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money == 0 && floor >= 20);}},
     // hp
     {"name":"First Death",      "desc":"die.","unlock":"tank","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 0);}},
@@ -224,6 +226,9 @@ let locked_achivements = [
     {"name":"lucky cat",        "desc":"have 20+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 20);}},
     {"name":"4 leaf clover",    "desc":"have 40+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 40);}},
     {"name":"chosen fate",      "desc":"have 50+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 50);}},
+    {"name":"lucky dime",       "desc":"have 100+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 100);}},
+    {"name":"100 clovers",      "desc":"have 400+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 400);}},
+    {"name":"lucky number 7.",  "desc":"have 700+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 700);}},
     // lvl
     {"name":"basic adventurer",        "desc":"reach lvl 10+","unlock":"mystic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
     {"name":"intermidiete adventurer", "desc":"reach lvl 20+","unlock":"greed","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 20);}},
@@ -231,6 +236,9 @@ let locked_achivements = [
     {"name":"expert adventurer",       "desc":"reach lvl 40+","unlock":"Deserter","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 40);}},
     {"name":"master adventurer",       "desc":"reach lvl 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 50);}},
     {"name":"grand master adventurer", "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
+    {"name":"gm+1 adventurer",         "desc":"reach lvl 200+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 200);}},
+    {"name":"gm+2 adventurer",         "desc":"reach lvl 500+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 500);}},
+    {"name":"gm+3 adventurer",         "desc":"reach lvl 1000+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 1000);}},
     // range
     {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"battle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
     {"name":"platnium eye",            "desc":"have 20+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
@@ -240,8 +248,8 @@ let locked_achivements = [
     {"name":"speedrunner",             "desc":"reach floor 20+ in under 5min","unlock":"trickster","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20 && trun < 300000);}},
     {"name":"GOD mode",                "desc":"have 50+ vision, 50+ luck, lvl 100+, 1000+ attack, 1000+ hp, and 1000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50 && lvl >= 100 && luck >= 50 && attack >= 1000 && hp >= 1000 && money >= 1000);}},
     {"name":"SIX - SEVEN",             "desc":"have 67 attack, 67 hp, lvl 67, 67 coins","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl == 67 && attack == 67 && hp == 67 && money == 67);}},
-    {"name":"blood money",             "desc":"have 100x as much money as hp.","unlock":"gladiator","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= hp * 100);}},
-    {"name":"three sword master",      "desc":"get sharpen sword++","unlock":"bladesmith","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "sharpen sword");}},
+    {"name":"blood money",             "desc":"have 100x as much money as hp.","unlock":"gladiator","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= hp * 100 && hp > 0);}},
+    {"name":"three sword master",      "desc":"get sharpen sword++","unlock":"bladesmith","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "sharpen sword");}},   
 ]
 
 let achivements = [{"name":"open the game","best":6}];
@@ -295,20 +303,57 @@ let BGL = ["#1e1e2e","#5b4242","#565681","#60785e","#876482","#cdd6f4"]
 let complexStats = false;
 
 let leaderboard = [];
+let leaderboardError = "";
+let leaderboardLoaded = false;
+let leaderboardPage = 0;
 
-function loadLeaderboard() {
-    // loads scores and leaderboard onto the leaderboard list.
-    fetch("https://api.github.com/repos/no10123/tagless-scores/issues?labels=score&state=all&per_page=100")
-        .then(r => r.json())
-        .then(issues => {
-            leaderboard = issues.map(i => {
-                const m = i.title.match(/^\[(\d+)\] (.*?) \|/);
-                return m ? {score: +m[1], name: m[2]} : null;
-            }).filter(Boolean)
-             .sort((a, b) => b.score - a.score)
-             .slice(0, 10);
-            draw();
-        });
+async function loadLeaderboard() {
+    leaderboard = [];
+    leaderboardError = "";
+    leaderboardLoaded = false;
+    leaderboardPage = 0;
+    try {
+        const response = await fetch("https://api.github.com/repos/no10123/tagless/issues?labels=score&state=all&per_page=100");
+        if (!response.ok) {
+            throw new Error(`Github Error: ${response.status} ${response.statusText}`);
+        }
+        const issues = await response.json();
+        if (!Array.isArray(issues)) {
+            throw new Error("Github returned weird value.");
+        }
+        leaderboard = issues.map(i => {
+            const titleParts = i.title.split("|").map(part => part.trim());
+            const header = titleParts.shift() || "";
+            const match = header.match(/^\[(\d+)\]\s*(.*)$/);
+            if (!match) return null;
+
+            let stats = {};
+            try {
+                const parsedBody = JSON.parse(i.body || "{}");
+                if (parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)) {
+                    stats = parsedBody;
+                }
+            } catch {} // pass just in case
+
+            const titleFloor = titleParts[0]?.match(/^floor\s+(\d+)$/i);
+            return {
+                score: Number(match[1]),
+                name: match[2],
+                floor: Number.isFinite(stats.floor) ? stats.floor : (titleFloor ? Number(titleFloor[1]) : "?"),
+                level: Number.isFinite(stats.lvl) ? stats.lvl : "?",
+                money: Number.isFinite(stats.money) ? stats.money : "?",
+                className: stats.cls || titleParts[1] || "unknown",
+                time: Number.isFinite(stats.time) ? formatTime(stats.time) : (titleParts[2] || "unknown"),
+                difficulty: ["easy", "medium", "hard", "expert", "master", "godlike", "ascended"][Number(titleParts[3])] || "unknown"
+            };
+        }).filter(Boolean)
+         .sort((a, b) => b.score - a.score)
+         .slice(0, 10);
+    } catch (error) {
+        leaderboardError = error instanceof Error ? error.message : String(error);
+    }
+    leaderboardLoaded = true;
+    draw();
 }
 
 // music
@@ -711,7 +756,9 @@ function draw() {
         lines.push("")
         lines.push(" -- Locked --")
         for (let i = 0; i < locked_achivements.length; i++) {
-            lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
+            if (!locked_achivements[i].name in new Set(achivements.map(a => a.name))) {
+                lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
+            }
         }
         lines.push("")
         lines.push("esc - go back to main menu")
@@ -799,9 +846,24 @@ function draw() {
         body.innerText = display;
     } else if (leaderboard_menu) {
         let lines = [border, "LEADERBOARD", ""];
-        if (leaderboard.length === 0) lines.push("loading...");
-        for (let i = 0; i < leaderboard.length; i++) {
-            lines.push(`${i + 1}. ${leaderboard[i].name} - ${leaderboard[i].score}`);
+        if (leaderboardError) lines.push(`error: ${leaderboardError}`);
+        else if (!leaderboardLoaded) lines.push("loading...");
+        else if (leaderboard.length === 0) lines.push("no scores yet, so go play!");
+        else {
+            const pageH = Math.max(1, Math.floor((H - 8) / 3)); // page height
+            const start = leaderboardPage * pageH;
+            for (let i = start; i < Math.min(start + pageH, leaderboard.length); i++) {
+                const entry = leaderboard[i];
+                lines.push(`${i + 1}. ${entry.name} - ${entry.score}`);
+                lines.push(`Floor:${entry.floor} Lvl:${entry.level} $:${entry.money} ${entry.className}`);
+                lines.push(`Time:${entry.time} Diff:${entry.difficulty}`);
+            }
+            const pageCount = Math.ceil(leaderboard.length / pageH);
+            lines.push("", [
+                leaderboardPage > 0 ? "<- prev" : "",
+                pageCount > 1 ? `page ${leaderboardPage + 1}/${pageCount}` : "",
+                leaderboardPage + 1 < pageCount ? "next ->" : ""
+            ].filter(Boolean).join(" | "));
         }
         lines.push("", "esc - back to main menu", "", border);
         let display = "\n  " + " ".repeat(W);
@@ -1418,13 +1480,13 @@ document.addEventListener("keydown", (event) => {
             const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
             const name = (prompt("name for leaderboard:", localStorage.getItem("tagless_name") || "") || "anonymous").trim().slice(0, 12);
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
-            fetch("https://api.github.com/repos/no10123/tagless-scores/issues", {
+            fetch("https://api.github.com/repos/no10123/tagless/issues", {
                 method: "POST",
-                headers: {"Authorization": "token " + "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", "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
+                headers: {"Authorization": "token " + "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", "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
                     title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
                     labels: ["score"],
-                    body: JSON.stringify({score, floor, lvl, money, cls: Class.name, time: t.run})
+                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run})
                 })
             }).then(r => { gameMessage = r.ok ? "score sent!" : "score failed (" + r.status + ")"; draw(); });
 
@@ -1479,6 +1541,23 @@ document.addEventListener("keydown", (event) => {
             mainMenu = false;
             leaderboard_menu = true;
             loadLeaderboard();
+            draw();
+            return;
+        }
+    } else if (leaderboard_menu) {
+        const pageSize = Math.max(1, Math.floor((H - 8) / 3));
+        const pageCount = Math.ceil(leaderboard.length / pageSize);
+        if (key === "Escape") {
+            leaderboard_menu = false;
+            mainMenu = true;
+            draw();
+            return;
+        } else if (key === "ArrowLeft" && leaderboardPage > 0) {
+            leaderboardPage--;
+            draw();
+            return;
+        } else if (key === "ArrowRight" && leaderboardPage + 1 < pageCount) {
+            leaderboardPage++;
             draw();
             return;
         }
@@ -1636,6 +1715,8 @@ document.addEventListener("keydown", (event) => {
         mainMenu = true;
         window.ClassAchivement = false;
         draw();
+    } else if (key == "`")  {
+        if (p) p.hp = 0
     }
 });
 
@@ -1662,3 +1743,15 @@ if (saved) {
 }
 
 
+
+
+
+
+// trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
+const tmsgs = ["use WASD to move","hold shift to sprint","explore some","Items: $ = money","p, h, P, H = healing","> is a shop and a staircase"]
+let TUTORIAL = true;
+if (TUTORIAL) {
+    for (let i = 0; i < tmsgs.length; i++) {
+        notify("Tutorial",tmsgs[i])
+    }
+}
