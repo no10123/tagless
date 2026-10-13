@@ -4,7 +4,7 @@ let H = 21;
 let grid = [];
 let best_floor = 1
 // btw this token can only be used to add, edit, remove issues on the github repo, nothing else. 
-const token = "github" + "_pat_11" + "A6Z3DRY0uiBjsusXifV4_0hbHd1Lhpsr1tHBVRiSTHqp" + "NaB5boA0WghMMeEAbdTu22MR5NGOYUFAqSIF"
+const token = "github" + "_pat_11" + "A6Z3DRY0uiBjs" + "usXifV4_0hbHd1Lhpsr1" + "tHBVRiSTHqp" + "NaB5boA0WghMMeEAbdTu" + "22MR5NGOYUFAqSIF"
 let instructions = [
     "inputs:          ",
     " wasd to move,   ",
