@@ -1220,22 +1220,23 @@ class Enemy {
             {"name":"master of all", "hp":[50000,99999],"dmg":[5000,15000], "ac":[1,200], "gold":[0,1000000],  "xp":[250000,500000],"lvl":20}
         ];
         this.varriants = [
-            {"name":"large",       "hp":[1,12],       "dmg":[1,4],        "ac":[1,3],     "gold":[1,2],       "xp":[2,3],    "lvl":1},
-            {"name":"strong",      "hp":0,            "dmg":[2,9],        "ac":0,         "gold":[5,9],       "xp":[4,9],    "lvl":1},
-            {"name":"weak",        "hp":-2,           "dmg":-5,           "ac":-2,        "gold":1,           "xp":1,        "lvl":0},
-            {"name":"giant",       "hp":12,           "dmg":[4,12],       "ac":[2,5],     "gold":[10,13],     "xp":[13,16],  "lvl":2},
-            {"name":"silver",      "hp":-3,           "dmg":-1,           "ac":10,        "gold":[1,3],       "xp":[24,30],  "lvl":2},
-            {"name":"gold",        "hp":30,           "dmg":[10,17],      "ac":1,         "gold":[30,32],     "xp":[3,7],    "lvl":2},
-            {"name":"basic",       "hp":0,            "dmg":0,            "ac":0,         "gold":0,           "xp":0,        "lvl":3},
-            {"name":"enourmess",   "hp":[50,70],      "dmg":[10,20],      "ac":[8,10],    "gold":[20,27],     "xp":[24,29],  "lvl":3},
-            {"name":"colossal",    "hp":[80,150],     "dmg":[12,22],      "ac":[1,15],    "gold":[5,90],      "xp":[4,90],   "lvl":4},
-            {"name":"rabid",       "hp":-20,          "dmg":[10,30],      "ac":-1,        "gold":-5,          "xp":[10,20],  "lvl":5},
-            {"name":"king",        "hp":[0,400],      "dmg":[0,40],       "ac":-2,        "gold":[100,120],   "xp":[40,90],  "lvl":6},
-            {"name":"queen",       "hp":[0,600],      "dmg":[0,35],       "ac":-2,        "gold":[100,120],   "xp":[40,90],  "lvl":6},
-            {"name":"corrupted",   "hp":[-100,300],   "dmg":[-100,150],   "ac":[-100,100],"gold":[-100,700],  "xp":[-100,900],"lvl":7},
-            {"name":"demon",       "hp":[10,350],     "dmg":[60,120],     "ac":-10,       "gold":[6,666],     "xp":[6,500],  "lvl":8},
-            {"name":"pure",        "hp":[100,1000],   "dmg":[-10,300],    "ac":50,        "gold":800,         "xp":1000,     "lvl":9},
-            {"name":"accended",    "hp":[1000,3000],  "dmg":[50,300],     "ac":60,        "gold":1000,        "xp":1000,     "lvl":10},
+            {"name":"large",             "hp":[1,12],       "dmg":[1,4],        "ac":[1,3],     "gold":[1,2],       "xp":[2,3],    "lvl":1},
+            {"name":"strong",            "hp":0,            "dmg":[2,9],        "ac":0,         "gold":[5,9],       "xp":[4,9],    "lvl":1},
+            {"name":"weak",              "hp":-2,           "dmg":-5,           "ac":-2,        "gold":1,           "xp":1,        "lvl":0},
+            {"name":"giant",             "hp":12,           "dmg":[4,12],       "ac":[2,5],     "gold":[10,13],     "xp":[13,16],  "lvl":2},
+            {"name":"silver",            "hp":-3,           "dmg":-1,           "ac":10,        "gold":[1,3],       "xp":[24,30],  "lvl":2},
+            {"name":"gold",              "hp":30,           "dmg":[10,17],      "ac":1,         "gold":[30,32],     "xp":[3,7],    "lvl":2},
+            {"name":"basic",             "hp":0,            "dmg":0,            "ac":0,         "gold":0,           "xp":0,        "lvl":3},
+            {"name":"enourmess",         "hp":[50,70],      "dmg":[10,20],      "ac":[8,10],    "gold":[20,27],     "xp":[24,29],  "lvl":3},
+            {"name":"colossal",          "hp":[80,150],     "dmg":[12,22],      "ac":[1,15],    "gold":[5,90],      "xp":[4,90],   "lvl":4},
+            {"name":"rabid",             "hp":-20,          "dmg":[10,30],      "ac":-1,        "gold":-5,          "xp":[10,20],  "lvl":5},
+            {"name":"king",              "hp":[0,400],      "dmg":[0,40],       "ac":-2,        "gold":[100,120],   "xp":[40,90],  "lvl":6},
+            {"name":"queen",             "hp":[0,600],      "dmg":[0,35],       "ac":-2,        "gold":[100,120],   "xp":[40,90],  "lvl":6},
+            {"name":"corrupted",         "hp":[-100,300],   "dmg":[-100,150],   "ac":[-100,100],"gold":[-100,700],  "xp":[-100,900],"lvl":7},
+            {"name":"demon",             "hp":[10,350],     "dmg":[60,120],     "ac":-10,       "gold":[6,666],     "xp":[6,500],  "lvl":8},
+            {"name":"pure",              "hp":[100,1000],   "dmg":[-10,300],    "ac":50,        "gold":800,         "xp":1000,     "lvl":9},
+            {"name":"accended",          "hp":[1000,3000],  "dmg":[50,300],     "ac":60,        "gold":1000,        "xp":1000,     "lvl":10},
+            {"name":"definitly a normal","hp":[10000,10000],"dmg":[100,1000],   "ac":100,       "gold":10000,       "xp":10000,    "lvl":20},
         ]
         this.lvls = {}
         for (let i = 0; i < this.monsters.length; i++) {
@@ -1278,8 +1279,9 @@ class Enemy {
                 Array.isArray(value) ? randomInt(value) : value
             ])
         );
+
         // 40% chance for random variant
-        if (Math.random() < 1) {
+        if (Math.random() < 0.4) {
             const pool = this.varriants.filter(v => v.lvl <= this.rate);
             if (pool.length) {
                 const v = pool[Math.floor(Math.random() * pool.length)];
