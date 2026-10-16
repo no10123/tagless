@@ -1447,10 +1447,33 @@ class potion {
     }
 }
 
+class encounters {
+    constructor (big) {
+        this.sym = big ? "E" : "e"
+        this.big = big
+        if (big) {
+            this.events = [
+                {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.spawn()}},
+                {"name":`+${10 * m.mult} coins`, "event":()=>{p.coins += 10 * m.mult}},
+                {"name":'trap', "event":()=>{hp -= math.ceil(math.random() * 12)}},
+                {"name":'shop', "event":()=>{shop.open()}},
+            ];
+        };
+    }
+    place () {
+        let {x,y} = getEmptyTile();
+        grid[y][x] = this.sym;
+    }
+    trigger() {
+        const event = this.events[math.ceil(math.random() * this.events.length)]
+    }
+}
 const fogMap = new Fog(4, fogSymbol);
 
 let t;
 let p;
+let e;
+let E;
 let PS = new potion("p",0); // +10
 let PM = new potion("h",1); // +25
 let PL = new potion("P",2); // +50
