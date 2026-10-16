@@ -113,7 +113,7 @@ let si = 0;
 let ay = 0;
 
 // a smol list.
-// default behaviour
+// default behavior
 const BASE = {"GameStart":() => {},"LevelUp":() => {},"FloorStart":() => {},"BattleStart":() => {},
     "winBatle":() => {},"fleeBattle":() => {},"coinPickup":() => {},"potionPickup":() => {},
     "OnAttack":d => d,"OnDamage":d => d,"unlocked":false,"best_floor":0};
@@ -953,6 +953,10 @@ class Player {
                 this.hp += Math.floor([10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])] * p.potion_affect)
                 Class.potionPickup();
                 updateStats();
+            } else if (E.sym == grid[nextY][nextX]) {
+                E.trigger()
+            } else if (e.sym == grid[nextY][nextX]) {
+                e.trigger()
             }
             this.place(air);
             this.x = nextX;
@@ -1165,7 +1169,6 @@ class Shop {
     }
 }
 
-
 class Enemy {
     constructor() {
         this.dc = 0
@@ -1270,7 +1273,30 @@ class Enemy {
         this.setStats()
         this.startBattle()
     }
-    setStats() {
+    cspawn(id=0,dc=-Math.floor(Math.random() * 10),floorTier = Math.floor((p.floor - 1) / 5),levelBonus = Math.floor(p.lvl / 10),rate=null,mp=[],sv=0) {
+        this.dc = dc
+        this.id = id;
+        if (rate == null) {
+            rate = Math.min(20, floorTier + levelBonus)
+        }
+        this.rate = rate;
+        this.mp = mp
+        if (mp == []) {
+            for (let i = 0; i < this.monsters.length; i++) {
+                if (this.lvls[i] <= this.rate) {
+                    this.mp.push(i);
+                }
+            }
+        }
+        if (this.mp.length === 0) {
+            this.id = 0;
+        } else {
+            this.id = this.mp[Math.floor(Math.random() * this.mp.length)];
+        }
+        this.setStats(sv)
+        this.startBattle()
+    }
+    setStats(sv=math.floor(p.floor / 20)) {
         this.monster = this.monsters[this.id];
 
         const rolled = Object.fromEntries(
@@ -1281,14 +1307,16 @@ class Enemy {
         );
 
         // 40% chance for random variant
-        if (Math.random() < 0.4) {
-            const pool = this.varriants.filter(v => v.lvl <= this.rate);
-            if (pool.length) {
-                const v = pool[Math.floor(Math.random() * pool.length)];
-                const vr = Object.fromEntries(Object.entries(v).map(([key, value]) => [key, Array.isArray(value) ? randomInt(value) : value]));
-                rolled.hp += vr.hp; rolled.dmg += vr.dmg; rolled.ac += vr.ac;
-                rolled.gold += vr.gold; rolled.xp += vr.xp;
-                rolled.name = vr.name + " " + rolled.name;
+        for (let i = 0; i < sv + 1; i++) {
+            if (Math.random() < 0.4) {
+                const pool = this.varriants.filter(v => v.lvl <= this.rate);
+                if (pool.length) {
+                    const v = pool[Math.floor(Math.random() * pool.length)];
+                    const vr = Object.fromEntries(Object.entries(v).map(([key, value]) => [key, Array.isArray(value) ? randomInt(value) : value]));
+                    rolled.hp += vr.hp; rolled.dmg += vr.dmg; rolled.ac += vr.ac;
+                    rolled.gold += vr.gold; rolled.xp += vr.xp;
+                    rolled.name = vr.name + " " + rolled.name;
+                }
             }
         }
 
@@ -1451,6 +1479,17 @@ class encounters {
     constructor (big) {
         this.sym = big ? "E" : "e"
         this.big = big
+        this.events = null;
+    }
+    spawn() {
+        if (p.floor > 3 ) {
+        }
+    }
+    place () {
+        let {x,y} = getEmptyTile();
+        grid[y][x] = this.sym;
+    }
+    trigger() {
         if (big) {
             this.events = [
                 {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.spawn()}},
@@ -1458,14 +1497,17 @@ class encounters {
                 {"name":'trap', "event":()=>{hp -= math.ceil(math.random() * 12)}},
                 {"name":'shop', "event":()=>{shop.open()}},
             ];
+        } else {
+            this.events = [
+                {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.spawn()}},
+                {"name":`+${10 * m.mult} coins`, "event":()=>{p.coins += 10 * m.mult}},
+                {"name":'trap', "event":()=>{hp -= math.ceil(math.random() * 12)}},
+                {"name":'shop', "event":()=>{shop.open()}},
+            ];
         };
-    }
-    place () {
-        let {x,y} = getEmptyTile();
-        grid[y][x] = this.sym;
-    }
-    trigger() {
-        const event = this.events[math.ceil(math.random() * this.events.length)]
+        const event = this.events[math.ceil(math.random() * this.events.length)];
+        notify("EVENT",event.name);
+        event.event();
     }
 }
 const fogMap = new Fog(4, fogSymbol);
