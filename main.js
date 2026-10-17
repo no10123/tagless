@@ -185,19 +185,25 @@ function winBattle() {
 
 const nh = Math.max(1, Math.floor((H - 10) / 4));
 let notifications = [];
-function notify(name, words) {
-    L_words = words.split(" ")
-    let LW = [];
-    let wl = 0
-    let I = 0
-    for (let i = 0; i < L_words.length) {
-        if (wl + L_words[i].length > instructionWidth) {
-            I += 1
+function notify(name, ws) {
+    if (!Array.isArray(ws)) ws = [String(ws)];
+    for (let word of ws) {
+        const L_words = String(word).split(" ").map(i => i + " ")
+        let LW = [];
+        let wl = 0
+        let I = 0
+        for (let i = 0; i < L_words.length; i++) {
+            if (wl + L_words[i].length > instructionWidth * 2) {
+                I += 1
+                wl = 0
+            }
+            if (!LW[I]) LW[I] = ""
+            LW[I] += (L_words[i])
+            wl += L_words[i].length
         }
-        LW[I] += (L_words[i])
+        notifications.push({name, words: LW});
+        while (notifications.length > nh) notifications.shift();
     }
-    notifications.push({name, words});
-    while (notifications.length > nh) notifications.shift();
 }
 
 let chosenSkills = [];
@@ -893,11 +899,14 @@ function draw() {
         const toasts = [];
         for (let i = 0; i < notifications.length; i++) {
             const n = notifications[i];
-            const text = ` ${n.name}: ${n.words} `;
+            const text = [` ${n.name}: `,...n.words];
+            const tw = instructionWidth * 2
             toasts.push("");
-            toasts.push("┌" + "─".repeat(text.length) + "┐");
-            toasts.push("│" + text + "│");
-            toasts.push("└" + "─".repeat(text.length) + "┘");
+            toasts.push("┌" + "─".repeat(tw) + "┐");
+            for (let j = 0; j < text.length; j++) {
+                toasts.push("│" + text[j] + " ".repeat(Math.max(0,tw - text[j].length)) + "│");
+            }
+            toasts.push("└" + "─".repeat(tw) + "┘");
         }
         const column = [...panel,"","NOTIFICATIONS: ", ...toasts];
 
@@ -964,9 +973,9 @@ class Player {
                 this.hp += Math.floor([10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])] * p.potion_affect)
                 Class.potionPickup();
                 updateStats();
-            } else if (E.sym == grid[nextY][nextX]) {
+            } else if (E && E.sym == grid[nextY][nextX]) {
                 E.trigger()
-            } else if (e.sym == grid[nextY][nextX]) {
+            } else if (e && e.sym == grid[nextY][nextX]) {
                 e.trigger()
             }
             this.place(air);
@@ -1858,10 +1867,9 @@ if (saved) {
 
 
 // trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
-const tmsgs = ["use WASD to move","hold shift to sprint","explore some","Items: $ = money","p, h, P, H = healing","> is a shop and a staircase"]
+let tmsgs = ["","use WASD to move","hold shift to sprint","","explore to find items, and stuff.","","Items: ","$ = money","p, h, P, H = healing","","> is a shop and a staircase to the next floor"]
 let TUTORIAL = true;
 if (TUTORIAL) {
-    for (let i = 0; i < tmsgs.length; i++) {
-        notify("Tutorial",tmsgs[i])
-    }
+    tmsgs = tmsgs.map(i => i + " ".repeat(Math.max(0,(instructionWidth * 2) - i.length - 1)));
+    notify("Tutorial",tmsgs.join(" "))
 }
