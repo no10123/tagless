@@ -1299,15 +1299,14 @@ class Enemy {
         this.setStats()
         this.startBattle()
     }
-    cspawn(id=0,dc=-Math.floor(Math.random() * 10),floorTier = Math.floor((p.floor - 1) / 5),levelBonus = Math.floor(p.lvl / 10),rate=null,mp=[],sv=0) {
-        this.dc = dc
+    cspawn(id=0,floorTier = Math.floor((p.floor - 1) / 5),levelBonus = Math.floor(p.lvl / 10),rate=null,mp=[],sv=0) {
         this.id = id;
         if (rate == null) {
             rate = Math.min(20, floorTier + levelBonus)
         }
         this.rate = rate;
         this.mp = mp
-        if (mp == []) {
+        if (this.mp == []) {
             for (let i = 0; i < this.monsters.length; i++) {
                 if (this.lvls[i] <= this.rate) {
                     this.mp.push(i);
@@ -1519,22 +1518,40 @@ class encounters {
     trigger() {
         if (this.big) {
             this.events = [
-                {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.enemy.cspawn(undefined, undefined, undefined, undefined, undefined, undefined, 1)}},
-                {"name":`+${10 * m.mult} coins`, "event":()=>{p.coins += 10 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 12)}},
-                {"name":'shop',                  "event":()=>{shop.open()}},
+                {"name":"it's a monster.",       "event":()=>{enemy.cspawn(undefined, undefined, undefined, undefined, undefined, 1)}},
+                {"name":`+${10 * m.mult} coins`, "event":()=>{p.money += 10 * m.mult}},
+                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 12); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
+                {"name":'shop',                  "event":()=>{shopState = shop.open(p.floor)}},
             ];
         } else {
             this.events = [
-                {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.cspawn()}},
-                {"name":`+${5 * m.mult} coins`,  "event":()=>{p.coins += 5 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 6)}},
+                {"name":"it's a monster.",       "event":()=>{enemy.cspawn()}},
+                {"name":`+${5 * m.mult} coins`,  "event":()=>{p.money += 5 * m.mult}},
+                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 6); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
                 {"name":'+1 reroll token',       "event":()=>{reroll_tokens += 1}},
             ];
         };
         const event = this.events[Math.floor(Math.random() * this.events.length)];
         notify("EVENT",event.name);
         event.event();
+    }
+}
+
+class floorModifiers {
+    constructor () {
+        // this.pool.name + " floor"
+        this.pool = {
+            "name":"dark","onEnter":()=>{fogMap.adjustRange(-1)},"onExit":()=>{fogMap.adjustRange(1)},"wight":100,
+            "name":"bright","onEnter":()=>{fogMap.adjustRange(1)},"onExit":()=>{fogMap.adjustRange(-1)},"wight":100,
+            "name":"quiet","onEnter":()=>{enemy.cmax *= 2},"onExit":()=>{enemy.cmax *= 0.5},"wight":100,
+            "name":"filled","onEnter":()=>{enemy.cmax *= 0.5},"onExit":()=>{enemy.cmax *= 2},"wight":100,
+            "name":"hoard","onEnter":()=>{for (let i = 0; i < m.l; i++) {let {x,y} = getEmptyTile(); m.x[i] = x; m.y[i] = y;}; m.place();},"onExit":()=>{},"wight":100,
+            "name":"empty","onEnter":()=>{for (let i = 0; i < m.l; i++) {grid[m.x[i]][m.y[i]] = " "}},"onExit":()=>{},"wight":100,
+            "name":"healing","onEnter":()=>{p.hp += 5},"onExit":()=>{p.hp += 5},"wight":100,
+            "name":"poiseness","onEnter":()=>{p.hp -= 5; if (hp <= 0) {death = true; deathCause = "poison"}},"onExit":()=>{p.hp -= 5; if (hp <= 0) {death = true; deathCause = "poison"}},"wight":100,
+            "name":"lucky","onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100,
+            "name":"unlucky","onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100,
+        }
     }
 }
 const fogMap = new Fog(4, fogSymbol);
