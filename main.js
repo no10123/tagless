@@ -186,6 +186,16 @@ function winBattle() {
 const nh = Math.max(1, Math.floor((H - 10) / 4));
 let notifications = [];
 function notify(name, words) {
+    L_words = words.split(" ")
+    let LW = [];
+    let wl = 0
+    let I = 0
+    for (let i = 0; i < L_words.length) {
+        if (wl + L_words[i].length > instructionWidth) {
+            I += 1
+        }
+        LW[I] += (L_words[i])
+    }
     notifications.push({name, words});
     while (notifications.length > nh) notifications.shift();
 }
@@ -758,7 +768,8 @@ function draw() {
         lines.push("")
         lines.push(" -- Locked --")
         for (let i = 0; i < locked_achivements.length; i++) {
-            if (!locked_achivements[i].name in new Set(achivements.map(a => a.name))) {
+            const unlockedNames = new Set(achivements.map(a => a.name));
+            if (!unlockedNames.has(locked_achivements[i].name)) {
                 lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
             }
         }
@@ -1296,7 +1307,7 @@ class Enemy {
         this.setStats(sv)
         this.startBattle()
     }
-    setStats(sv=math.floor(p.floor / 20)) {
+    setStats(sv=Math.floor(p.floor / 20)) {
         this.monster = this.monsters[this.id];
 
         const rolled = Object.fromEntries(
@@ -1494,18 +1505,18 @@ class encounters {
             this.events = [
                 {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.spawn()}},
                 {"name":`+${10 * m.mult} coins`, "event":()=>{p.coins += 10 * m.mult}},
-                {"name":'trap', "event":()=>{hp -= math.ceil(math.random() * 12)}},
+                {"name":'trap', "event":()=>{hp -= Math.ceil(Math.random() * 12)}},
                 {"name":'shop', "event":()=>{shop.open()}},
             ];
         } else {
             this.events = [
                 {"name":"it's a monster.",       "event":()=>{enemy.dc = enemy.cmax; enemy.spawn()}},
                 {"name":`+${10 * m.mult} coins`, "event":()=>{p.coins += 10 * m.mult}},
-                {"name":'trap', "event":()=>{hp -= math.ceil(math.random() * 12)}},
+                {"name":'trap', "event":()=>{hp -= Math.ceil(Math.random() * 12)}},
                 {"name":'shop', "event":()=>{shop.open()}},
             ];
         };
-        const event = this.events[math.ceil(math.random() * this.events.length)];
+        const event = this.events[Math.ceil(Math.random() * this.events.length)];
         notify("EVENT",event.name);
         event.event();
     }
