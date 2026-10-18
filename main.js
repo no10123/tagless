@@ -168,6 +168,7 @@ let Classes = [
     {...BASE, "name":"bladesmith","LevelUp":(skill)=>{p.attack += 1}, "desc":"gain 1 attack every levl."},
     {...BASE, "name":"cyadian","GameStart":()=>{p.sprint = Math.max(W,H); p.move_speed = Math.max(W,H)},"FloorStart":()=>{p.sprint = Math.max(0, p.sprint - 1); p.attack += (p.floor % 2 == 0) ? 1 : 0}, "desc":"start with max speed, and sprint, -1 sprint each floor, and gain 1 attack every seccond floor."},
     {...BASE, "name":"gladiator","GameStart":()=>{p.hp -= 50},"OnDamage":(d)=>{p.money += Math.floor(d/2); return d;}, "desc":"start with 50 less hp, gain money when you take damgege."},
+    {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"}
 ]
  // 30 total classes
 let Class = Classes[0];
@@ -979,9 +980,15 @@ class Player {
             if (grid[nextY][nextX] == s.sym) {
                 goUp = true;
             } else if (grid[nextY][nextX] == m.sym) {
-                this.money += Math.floor((m.mult + 0.1) * Math.sqrt(this.floor));
-                Class.coinPickup();
-                updateStats();
+                if (Class.mimicChance && Math.random() < Class.mimicChance && !battle) {
+                    grid[nextY][nextX] = air;
+                    enemy.cspawn();
+                    if (battle) {battle.mimic = true;}
+                } else {
+                    this.money += Math.floor((m.mult + 0.1) * Math.sqrt(this.floor));
+                    Class.coinPickup();
+                    updateStats();
+                }
             } else if ([PS.sym, PM.sym, PL.sym, PX.sym].includes(grid[nextY][nextX])) {
                 this.hp += Math.floor([10,25,50,100][[PS.sym,PM.sym,PL.sym,PX.sym].indexOf(grid[nextY][nextX])] * p.potion_affect)
                 Class.potionPickup();
@@ -996,7 +1003,7 @@ class Player {
             this.y = nextY;
             this.place(this.sym);
             if (goUp) s.next();
-            if (!shopState) enemy.spawn();
+            if (!shopState && !battle && !skill_selection) enemy.spawn()
         }
     }
 
@@ -1111,6 +1118,7 @@ class stairs {
         p.place("@");
         this.place();
         if (!Class.noShop && !Class.goldToXp) shopState = shop.open(p.floor);
+        if (fmOn && p) fm.newFloor();
         Class.FloorStart();
         updateStats();
         draw();
@@ -1310,28 +1318,22 @@ class Enemy {
         this.setStats()
         this.startBattle()
     }
-    cspawn(id=0,floorTier = Math.floor((p.floor - 1) / 5),levelBonus = Math.floor(p.lvl / 10),rate=null,mp=[],sv=0) {
-        this.id = id;
-        if (rate == null) {
-            rate = Math.min(20, floorTier + levelBonus)
-        }
+    cspawn(id = null, floorTier = Math.floor((p.floor - 1) / 5), levelBonus = Math.floor(p.lvl / 10), rate = null, mp = null, sv = 0) {
+        if (rate == null) rate = Math.min(20, floorTier + levelBonus);
         this.rate = rate;
-        this.mp = mp
-        if (this.mp == []) {
+        if (mp) {
+            this.mp = mp;
+        } else {
+            this.mp = [];
             for (let i = 0; i < this.monsters.length; i++) {
-                if (this.lvls[i] <= this.rate) {
-                    this.mp.push(i);
-                }
+                if (this.lvls[i] <= this.rate) this.mp.push(i);
             }
         }
-        if (this.mp.length === 0) {
-            this.id = 0;
-        } else {
-            this.id = this.mp[Math.floor(Math.random() * this.mp.length)];
-        }
-        this.setStats(sv)
-        this.startBattle()
+        this.id = id == null ? (this.mp.length ? this.mp[Math.floor(Math.random() * this.mp.length)] : 0) : id;
+        this.setStats(sv);
+        this.startBattle();
     }
+
     setStats(sv=Math.min(Math.floor(p.floor / 20), this.varriants.length)) {
         this.monster = this.monsters[this.id];
 
@@ -1551,18 +1553,25 @@ class encounters {
 class floorModifiers {
     constructor () {
         // this.pool.name + " floor"
-        this.pool = {
-            "name":"dark","onEnter":()=>{fogMap.adjustRange(-1)},"onExit":()=>{fogMap.adjustRange(1)},"wight":100,
-            "name":"bright","onEnter":()=>{fogMap.adjustRange(1)},"onExit":()=>{fogMap.adjustRange(-1)},"wight":100,
-            "name":"quiet","onEnter":()=>{enemy.cmax *= 2},"onExit":()=>{enemy.cmax *= 0.5},"wight":100,
-            "name":"filled","onEnter":()=>{enemy.cmax *= 0.5},"onExit":()=>{enemy.cmax *= 2},"wight":100,
-            "name":"hoard","onEnter":()=>{for (let i = 0; i < m.l; i++) {let {x,y} = getEmptyTile(); m.x[i] = x; m.y[i] = y;}; m.place();},"onExit":()=>{},"wight":100,
-            "name":"empty","onEnter":()=>{for (let i = 0; i < m.l; i++) {grid[m.x[i]][m.y[i]] = " "}},"onExit":()=>{},"wight":100,
-            "name":"healing","onEnter":()=>{p.hp += 5},"onExit":()=>{p.hp += 5},"wight":100,
-            "name":"poiseness","onEnter":()=>{p.hp -= 5; if (hp <= 0) {death = true; deathCause = "poison"}},"onExit":()=>{p.hp -= 5; if (hp <= 0) {death = true; deathCause = "poison"}},"wight":100,
-            "name":"lucky","onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100,
-            "name":"unlucky","onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100,
-        }
+        this.pool = [
+            {"name":"dark","onEnter":()=>{fogMap.adjustRange(-1)},"onExit":()=>{fogMap.adjustRange(1)},"wight":100},
+            {"name":"bright","onEnter":()=>{fogMap.adjustRange(1)},"onExit":()=>{fogMap.adjustRange(-1)},"wight":100},
+            {"name":"quiet","onEnter":()=>{enemy.cmax *= 2},"onExit":()=>{enemy.cmax *= 0.5},"wight":100},
+            {"name":"filled","onEnter":()=>{enemy.cmax *= 0.5},"onExit":()=>{enemy.cmax *= 2},"wight":100},
+            {"name":"hoard","onEnter":()=>{ for (let i = 0; i < m.l; i++) { const {x, y} = getEmptyTile(); m.x.push(x); m.y.push(y); } m.l = m.x.length; m.place(); },"onExit":()=>{},"wight":100},
+            {"name":"empty","onEnter":()=>{for (let i = 0; i < m.l; i++) {grid[m.y[i]][m.x[i]] = " "}},"onExit":()=>{},"wight":100},
+            {"name":"healing","onEnter":()=>{p.hp += 5},"onExit":()=>{p.hp += 5},"wight":100},
+            {"name":"poiseness","onEnter":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"onExit":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"wight":100},
+            {"name":"lucky","onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100},
+            {"name":"unlucky","onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100},
+        ]
+        this.lfm = {"name":"NA","onEnter":()=>{},"onExit":()=>{},"wight":100}
+    }
+    newFloor () {
+        this.lfm.onExit();
+        this.lfm = this.pool[Math.floor(Math.random() * this.pool.length)]
+        this.lfm.onEnter();
+        notify("Floor Variant: ",this.lfm.name)
     }
 }
 const fogMap = new Fog(4, fogSymbol);
@@ -1579,6 +1588,8 @@ let m;
 let s;
 let difficulty = 1; // 0 = easy, 1 = medium, 2 = hard, 3 = expert, 4 = master, 5 = godlike, 6 = accended. (could use exponitional.) 
 let shop
+let fm = new floorModifiers();
+let fmOn = true;
 
 function reset() {
     chosenSkills = [];
