@@ -365,7 +365,18 @@ async function loadLeaderboard() {
                 difficulty: ["easy", "medium", "hard", "expert", "master", "godlike", "ascended"][Number(titleParts[3])] || "unknown"
             };
         }).filter(Boolean)
-         .sort((a, b) => b.score - a.score)
+         .sort((a, b) => {
+         if (b.score !== a.score) {
+             return b.score - a.score;
+         }
+         
+         const [mA, sA] = a.time.split(':').map(Number);
+         const [mB, sB] = b.time.split(':').map(Number);
+         
+         const MA = mA * 60 + sA;
+         const MB = mB * 60 + sB;
+         return MA - MB; 
+         })
          .slice(0, 10);
     } catch (error) {
         leaderboardError = error instanceof Error ? error.message : String(error);
