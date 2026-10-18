@@ -222,7 +222,7 @@ let locked_achivements = [
     {"name":"A doller!",        "desc":"obtain 100+ coins.","unlock":"rober","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100);}},
     {"name":"A band!",          "desc":"obtain 1000+ coins.","unlock":"rich","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
     {"name":"money collector",  "desc":"obtain 5000+ coins.","unlock":"scavenger","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 5000);}},
-    {"name":"walking bank",     "desc":"obtain 10000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 10000);}},
+    {"name":"walking bank",     "desc":"obtain 10000+ coins.","unlock":"mimic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 10000);}},
     {"name":"Gold certificate", "desc":"obtain 100000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100000);}},
     {"name":"Millionaire!",     "desc":"obtain 1000000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000000);}},
     {"name":"Broke explorer",   "desc":"have 0 coins on floor 20 or greater.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money == 0 && floor >= 20);}},
@@ -1554,16 +1554,16 @@ class floorModifiers {
     constructor () {
         // this.pool.name + " floor"
         this.pool = [
-            {"name":"dark","onEnter":()=>{fogMap.adjustRange(-1)},"onExit":()=>{fogMap.adjustRange(1)},"wight":100},
-            {"name":"bright","onEnter":()=>{fogMap.adjustRange(1)},"onExit":()=>{fogMap.adjustRange(-1)},"wight":100},
-            {"name":"quiet","onEnter":()=>{enemy.cmax *= 2},"onExit":()=>{enemy.cmax *= 0.5},"wight":100},
-            {"name":"filled","onEnter":()=>{enemy.cmax *= 0.5},"onExit":()=>{enemy.cmax *= 2},"wight":100},
-            {"name":"hoard","onEnter":()=>{ for (let i = 0; i < m.l; i++) { const {x, y} = getEmptyTile(); m.x.push(x); m.y.push(y); } m.l = m.x.length; m.place(); },"onExit":()=>{},"wight":100},
-            {"name":"empty","onEnter":()=>{for (let i = 0; i < m.l; i++) {grid[m.y[i]][m.x[i]] = " "}},"onExit":()=>{},"wight":100},
-            {"name":"healing","onEnter":()=>{p.hp += 5},"onExit":()=>{p.hp += 5},"wight":100},
-            {"name":"poiseness","onEnter":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"onExit":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"wight":100},
-            {"name":"lucky","onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100},
-            {"name":"unlucky","onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100},
+            {"name":"dark",      "onEnter":()=>{fogMap.adjustRange(-1)},"onExit":()=>{fogMap.adjustRange(1)},"wight":100},
+            {"name":"bright",    "onEnter":()=>{fogMap.adjustRange(1)},"onExit":()=>{fogMap.adjustRange(-1)},"wight":100},
+            {"name":"quiet",     "onEnter":()=>{enemy.cmax *= 2},"onExit":()=>{enemy.cmax *= 0.5},"wight":100},
+            {"name":"filled",    "onEnter":()=>{enemy.cmax *= 0.5},"onExit":()=>{enemy.cmax *= 2},"wight":100},
+            {"name":"hoard",     "onEnter":()=>{ for (let i = 0; i < m.l; i++) { const {x, y} = getEmptyTile(); m.x.push(x); m.y.push(y); } m.l = m.x.length; m.place(); },"onExit":()=>{},"wight":100},
+            {"name":"empty",     "onEnter":()=>{for (let i = 0; i < m.l; i++) {grid[m.y[i]][m.x[i]] = " "}},"onExit":()=>{},"wight":100},
+            {"name":"healing",   "onEnter":()=>{p.hp += 5},"onExit":()=>{p.hp += 5},"wight":100},
+            {"name":"poiseness", "onEnter":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"onExit":()=>{p.hp -= 5; if (p.hp <= 0) {Death = true; deathCause = "poison"}},"wight":100},
+            {"name":"lucky",     "onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100},
+            {"name":"unlucky",   "onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100},
         ]
         this.lfm = {"name":"NA","onEnter":()=>{},"onExit":()=>{},"wight":100}
     }
