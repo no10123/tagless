@@ -196,7 +196,7 @@ function notify(name, ws) {
         let wl = 0
         let I = 0
         for (let i = 0; i < L_words.length; i++) {
-            if (wl + L_words[i].length > instructionWidth * 2) {
+            if (wl + L_words[i].length > instructionWidth) {
                 I += 1
                 wl = 0
             }
@@ -965,7 +965,7 @@ function draw() {
         for (let i = 0; i < notifications.length; i++) {
             const n = notifications[i];
             const text = [` ${n.name}: `,...n.words];
-            const tw = instructionWidth * 2
+            const tw = instructionWidth
             toasts.push("");
             toasts.push("┌" + "─".repeat(tw) + "┐");
             for (let j = 0; j < text.length; j++) {
@@ -1981,6 +1981,6 @@ if (saved) {
 let tmsgs = ["","use WASD to move","hold shift to sprint","","explore to find items, and stuff.","","Items: ","$ = money","p, h, P, H = healing","","> is a shop and a staircase to the next floor"]
 let TUTORIAL = true;
 if (TUTORIAL) {
-    tmsgs = tmsgs.map(i => i + " ".repeat(Math.max(0,(instructionWidth * 2) - i.length - 1)));
+    tmsgs = tmsgs.map(i => i.trim()).filter(Boolean);
     notify("Tutorial",tmsgs.join(" "))
 }
