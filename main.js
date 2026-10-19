@@ -170,7 +170,8 @@ let Classes = [
     {...BASE, "name":"gladiator","GameStart":()=>{p.hp -= 50},"OnDamage":(d)=>{p.money += Math.floor(d/2); return d;}, "desc":"start with 50 less hp, gain money when you take damgege."},
     {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"}
 ]
- // 30 total classes
+// 31 total classes, and more comming soon... , 
+// maybye will make classes arround some more niche stuff.
 let Class = Classes[0];
 let avail_classes = Classes;
 
@@ -339,8 +340,23 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
         }
     }
     if (floor > Class.best_floor) Class.best_floor = floor;
+    percentFormula();
     saveProgress();
 }
+
+let percentTotal = locked_achivements.length
+function percentFormula (classList = Classes) {
+    let steps = 0;
+    for (const c of classList) {
+        for (const a of c.achivements) {
+            if (a.name === "open the game") continue;
+            const b = (Number.isInteger(a.best) && a.best >= 0) ? Math.min(6, a.best) : 0;
+            steps += b + 1;
+        }
+    }
+    return 100 * steps / (percentTotal * classList.length);
+}
+let percentComplete = percentFormula();
 
 
 
@@ -641,6 +657,7 @@ function draw() {
             "7. leaderboard",
             "",
             `best score: ${localStorage.getItem("tagless_best") || 0}`,
+            `percent complete: ${percentComplete}%`,
             "",
             border
         ];
@@ -816,6 +833,7 @@ function draw() {
             border,
             `- a -- achivements: ${shownName} -- d -`,
             `best floor: ${A_class >= 0 ? Classes[A_class].best_floor : best_floor}`,
+            `percent: ${(A_class >= 0 ? percentFormula([Classes[A_class]]) : percentComplete).toFixed(1)}%`,
             "",
         ];
         for (let i = 0; i < shown.length; i++) {
