@@ -177,6 +177,7 @@ let avail_classes = Classes;
 function winBattle() {
     p.xp   += Class.goldToXp ? battle.enemy.moneyReward * 2 : (Class.xpToGold ? 0 : battle.enemy.xpReward);
     p.money += Class.xpToGold ? (battle.enemy.xpReward + battle.enemy.moneyReward) : (Class.goldToXp ? 0 : battle.enemy.moneyReward);
+    battlesWon += 1
     Class.winBatle(); 
     battle = null; 
     p.check_lvl(); 
@@ -207,6 +208,7 @@ function notify(name, ws) {
     }
 }
 
+let battlesWon = 0;
 let chosenSkills = [];
 let chosenItems  = [];
 
@@ -232,6 +234,7 @@ let locked_achivements = [
     {"name":"Five of hearts",   "desc":"have 500+ hp.","unlock":"gaurdian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 500);}},
     {"name":"Imortality?",      "desc":"have 1000+ hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 1000);}},
     // attack
+    {"name":"pointless",        "desc":"get 0 attack. Somehow. ","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack == 0);}},
     {"name":"baisc sword",      "desc":"have 25+ attack.","unlock":"apprentice","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 25);}},
     {"name":"sharpened sword",  "desc":"have 50+ attack.","unlock":"executor","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 50);}},
     {"name":"shiny sword",      "desc":"have 75+ attack.","unlock":"barbarian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 75);}},
@@ -268,7 +271,40 @@ let locked_achivements = [
     {"name":"GOD mode",                "desc":"have 50+ vision, 50+ luck, lvl 100+, 1000+ attack, 1000+ hp, and 1000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50 && lvl >= 100 && luck >= 50 && attack >= 1000 && hp >= 1000 && money >= 1000);}},
     {"name":"SIX - SEVEN",             "desc":"have 67 attack, 67 hp, lvl 67, 67 coins","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl == 67 && attack == 67 && hp == 67 && money == 67);}},
     {"name":"blood money",             "desc":"have 100x as much money as hp.","unlock":"gladiator","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= hp * 100 && hp > 0);}},
+    // lvl 30 themed achivements. 
     {"name":"three sword master",      "desc":"get sharpen sword++","unlock":"bladesmith","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "sharpen sword");}},   
+    {"name":"three of hearts",         "desc":"get health boost++","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "health boost");}},
+    {"name":"lottery tiket",           "desc":"get quick buck++","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "quick buck");}},
+    {"name":"3 leaf clover",           "desc":"get luck bonus++","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "luck bonus");}},
+    {"name":"fortune finder",          "desc":"get coin collector++","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl % 10 == 0 && lvl % 3 == 0 && chosenSkills.length > 0 && chosenSkills[chosenSkills.length - 1].name == "coin collector");}},
+    // shop based
+    {"name":"avrage customer",         "desc":"buy 20+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 20)}},
+    {"name":"super customer",          "desc":"buy 50+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 50)}},
+    {"name":"ultra customer",          "desc":"buy 60+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 60)}},
+    {"name":"legendary customer",      "desc":"buy 70+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 70)}},
+    {"name":"accended customer",       "desc":"buy 80+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 80)}},
+    {"name":"exotic customer",         "desc":"buy 90+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 90)}},
+    {"name":"customer+",               "desc":"buy 100+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 100)}},
+    {"name":"customer of the year",    "desc":"buy 200+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 200)}},
+    // battles won
+    {"name":"first kill",              "desc":"kill a monster","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 1)}},
+    {"name":"set of dozen",            "desc":"kill 12+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 12)}},
+    {"name":"month of destruction",    "desc":"kill 30+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 30)}},
+    {"name":"50% off of deaths",       "desc":"kill 50+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 50)}},
+    {"name":"decade of deaths",        "desc":"kill 100+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 100)}},
+    {"name":"murderer!",               "desc":"kill 300+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 300)}},
+    {"name":"gladiator",               "desc":"kill 500+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 500)}},    
+    {"name":"destoyer of all",         "desc":"kill 700+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 700)}},    
+    {"name":"bringer of death",        "desc":"kill 1000+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 1000)}},    
+    {"name":"passafist",               "desc":"kill 0 monsters on floor 3+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 3)}},   
+    {"name":"passafist+",              "desc":"kill 0 monsters on floor 5+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 5)}},    
+    {"name":"passafist++",             "desc":"kill 0 monsters on floor 7+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 7)}},    
+    {"name":"passafist+++",            "desc":"kill 0 monsters on floor 10+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 10)}},    
+    {"name":"passafist++++",           "desc":"kill 0 monsters on floor 15+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 15)}},    
+    {"name":"passafist+++++",          "desc":"kill 0 monsters on floor 20+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 20)}},    
+    {"name":"bringer of hope",         "desc":"kill 0 monsters on floor 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 30)}},    
+    {"name":"peacefull victory",       "desc":"kill 0 monsters on floor 40+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 40)}},    
+    {"name":"angel of life",           "desc":"kill 0 monsters on floor 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 50)}},    
 ]
 
 let achivements = [{"name":"open the game","best":6}];
@@ -318,6 +354,7 @@ let FGI = 0;
 let BGI = 0;
 let FGL = ["#cdd6f4","#f5e0dc","#cba6f7","#f38ba8","#89b4fa","#a6e3a1","#94e2d5","#f9e2af","#89b4fa","#1e1e2e"]
 let BGL = ["#1e1e2e","#5b4242","#565681","#60785e","#876482","#cdd6f4"]
+let A_class = -1
 
 let complexStats = false;
 
@@ -773,22 +810,21 @@ function draw() {
         }
         body.innerText = display;
     } else if (achivement_menu) {
-        if (window.ClassAchivement) {
-            const save_achive = achivements;
-            achivements = Class.achivements
-        }
+        const shown = A_class >= 0 ? Classes[A_class].achivements : achivements;
+        const shownName = A_class >= 0 ? Classes[A_class].name : "all classes";
         let lines = [
             border,
-            "- s -- achivements -- w -",
+            `- a -- achivements: ${shownName} -- d -`,
+            `best floor: ${A_class >= 0 ? Classes[A_class].best_floor : best_floor}`,
             "",
         ];
-        for (let i = 0; i < achivements.length; i++) {
-            lines.push(`${achivements[i].name} - ${achivements[i].best}`);
+        for (let i = 0; i < shown.length; i++) {
+            lines.push(`${shown[i].name} - ${shown[i].best}`);
         }
         lines.push("")
         lines.push(" -- Locked --")
+        const unlockedNames = new Set(shown.map(a => a.name));
         for (let i = 0; i < locked_achivements.length; i++) {
-            const unlockedNames = new Set(achivements.map(a => a.name));
             if (!unlockedNames.has(locked_achivements[i].name)) {
                 lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
             }
@@ -807,9 +843,6 @@ function draw() {
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
         }
         body.innerText = display;
-        if (window.ClassAchivement) {
-            achivements = save_achive;
-        }
     } else if (Death) {
         const lines = [
             border,
@@ -1592,6 +1625,7 @@ let fm = new floorModifiers();
 let fmOn = true;
 
 function reset() {
+    battlesWon = 0
     chosenSkills = [];
     chosenItems = [];
     battle = null;
@@ -1691,6 +1725,7 @@ document.addEventListener("keydown", (event) => {
         } else if (key === "4") {
             mainMenu = false;
             achivement_menu = true;
+            A_class = -1;
             draw();
             return;
         } else if (key === "5") {
@@ -1838,7 +1873,8 @@ document.addEventListener("keydown", (event) => {
         }
         if (key === "Enter") {
             achivement_menu = true
-            window.ClassAchivement = true
+            A_class = Classes.indexOf(Class)
+            ay = 0
         }
     } else if (achivement_menu) {
         if (key.toLocaleLowerCase() === "w") {
@@ -1848,6 +1884,18 @@ document.addEventListener("keydown", (event) => {
         }
         if (key.toLocaleLowerCase() === "s") {
             ay = Math.min(Math.max(0, window.lines.length - Math.max(1, H - 5)), ay + 1);
+            draw();
+            return;
+        }
+        if (key.toLocaleLowerCase() === "a") {
+            A_class = A_class === -1 ? Classes.length - 1 : A_class - 1;
+            ay = 0;
+            draw();
+            return;
+        }
+        if (key.toLocaleLowerCase() === "d") {
+            A_class = A_class === Classes.length - 1 ? -1 : A_class + 1;
+            ay = 0;
             draw();
             return;
         }
