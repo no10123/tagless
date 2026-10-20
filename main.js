@@ -226,10 +226,11 @@ let locked_achivements = [
     {"name":"A band!",          "desc":"obtain 1000+ coins.","unlock":"rich","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000);}},
     {"name":"money collector",  "desc":"obtain 5000+ coins.","unlock":"scavenger","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 5000);}},
     {"name":"walking bank",     "desc":"obtain 10000+ coins.","unlock":"mimic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 10000);}},
+    {"name":"50k warhamer",     "desc":"obtain 50000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 50000);}},
     {"name":"Gold certificate", "desc":"obtain 100000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 100000);}},
-    {"name":"Millionaire!",     "desc":"obtain 1000000+ coins.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= 1000000);}},
     {"name":"Broke explorer",   "desc":"have 0 coins on floor 20 or greater.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money == 0 && floor >= 20);}},
     // hp
+    {"name":"keep on standing", "desc":"get 1 hp.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 1);}},
     {"name":"First Death",      "desc":"die.","unlock":"tank","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp == 0);}},
     {"name":"dual heart",       "desc":"have 200+ hp.","unlock":"vampire","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 200);}},
     {"name":"Five of hearts",   "desc":"have 500+ hp.","unlock":"gaurdian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (hp >= 500);}},
@@ -240,8 +241,8 @@ let locked_achivements = [
     {"name":"sharpened sword",  "desc":"have 50+ attack.","unlock":"executor","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 50);}},
     {"name":"shiny sword",      "desc":"have 75+ attack.","unlock":"barbarian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 75);}},
     {"name":"legendary sword",  "desc":"have 100+ attack.","unlock":"merchant","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 100);}},
-    {"name":"accended sword",   "desc":"have 500+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 500);}},
-    {"name":"god killer",       "desc":"have 1000+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 1000);}},
+    {"name":"accended sword",   "desc":"have 150+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 150);}},
+    {"name":"god killer",       "desc":"have 200+ attack.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (attack >= 200);}},
     // luck
     {"name":"Pure skill",       "desc":"have 0 luck on floor 20+.","unlock":"monk","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck == 0 && floor >= 20);}},
     {"name":"dice collector",   "desc":"have 5+ luck.","unlock":"cat","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 5);}},
@@ -249,27 +250,28 @@ let locked_achivements = [
     {"name":"lucky cat",        "desc":"have 20+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 20);}},
     {"name":"4 leaf clover",    "desc":"have 40+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 40);}},
     {"name":"chosen fate",      "desc":"have 50+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 50);}},
-    {"name":"lucky dime",       "desc":"have 100+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 100);}},
-    {"name":"100 clovers",      "desc":"have 400+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 400);}},
-    {"name":"lucky number 7.",  "desc":"have 700+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 700);}},
+    {"name":"lucky dime",       "desc":"have 75+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 75);}},
+    {"name":"100 clovers",      "desc":"have 100+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 100);}},
+    {"name":"lucky number 7.",  "desc":"have 117+ luck.","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (luck >= 117);}},
     // lvl
-    {"name":"basic adventurer",        "desc":"reach lvl 10+","unlock":"mystic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
+    {"name":"begginer adventurer",     "desc":"reach lvl 10+","unlock":"mystic","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 10);}},
     {"name":"intermidiete adventurer", "desc":"reach lvl 20+","unlock":"greed","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 20);}},
     {"name":"advanced adventurer",     "desc":"reach lvl 30+","unlock":"cyadian","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 30);}},
     {"name":"expert adventurer",       "desc":"reach lvl 40+","unlock":"Deserter","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 40);}},
     {"name":"master adventurer",       "desc":"reach lvl 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 50);}},
-    {"name":"grand master adventurer", "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
-    {"name":"gm+1 adventurer",         "desc":"reach lvl 200+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 200);}},
-    {"name":"gm+2 adventurer",         "desc":"reach lvl 500+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 500);}},
-    {"name":"gm+3 adventurer",         "desc":"reach lvl 1000+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 1000);}},
+    {"name":"grand master adventurer", "desc":"reach lvl 60+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 60);}},
+    {"name":"gm+1 adventurer",         "desc":"reach lvl 70+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 70);}},
+    {"name":"gm+2 adventurer",         "desc":"reach lvl 80+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 80);}},
+    {"name":"gm+3 adventurer",         "desc":"reach lvl 90+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 90);}},
+    {"name":"gm+4 adventurer",         "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
     // range
     {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"battle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
     {"name":"platnium eye",            "desc":"have 20+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
-    {"name":"third eye",               "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
-    {"name":"Glasses!",                "desc":"have 50+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50);}},
+    {"name":"third eye",               "desc":"have 25+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 25);}},
+    {"name":"Glasses!",                "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
     // unique. 
     {"name":"speedrunner",             "desc":"reach floor 20+ in under 5min","unlock":"trickster","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (floor >= 20 && trun < 300000);}},
-    {"name":"GOD mode",                "desc":"have 50+ vision, 50+ luck, lvl 100+, 1000+ attack, 1000+ hp, and 1000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 50 && lvl >= 100 && luck >= 50 && attack >= 1000 && hp >= 1000 && money >= 1000);}},
+    {"name":"GOD mode",                "desc":"have 30+ vision, 50+ luck, lvl 60+, 200+ attack, 750+ hp, and 10000+ money","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30 && lvl >= 60 && luck >= 50 && attack >= 200 && hp >= 750 && money >= 10000);}},
     {"name":"SIX - SEVEN",             "desc":"have 67 attack, 67 hp, lvl 67, 67 coins","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl == 67 && attack == 67 && hp == 67 && money == 67);}},
     {"name":"blood money",             "desc":"have 100x as much money as hp.","unlock":"gladiator","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (money >= hp * 100 && hp > 0);}},
     // lvl 30 themed achivements. 
@@ -286,26 +288,26 @@ let locked_achivements = [
     {"name":"accended customer",       "desc":"buy 80+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 80)}},
     {"name":"exotic customer",         "desc":"buy 90+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 90)}},
     {"name":"customer+",               "desc":"buy 100+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 100)}},
-    {"name":"customer of the year",    "desc":"buy 200+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 200)}},
+    {"name":"customer of the year",    "desc":"buy 120+ items in a run","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (chosenItems.length >= 120)}},
     // battles won
     {"name":"first kill",              "desc":"kill a monster","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 1)}},
     {"name":"set of dozen",            "desc":"kill 12+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 12)}},
     {"name":"month of destruction",    "desc":"kill 30+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 30)}},
     {"name":"50% off of deaths",       "desc":"kill 50+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 50)}},
     {"name":"decade of deaths",        "desc":"kill 100+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 100)}},
-    {"name":"murderer!",               "desc":"kill 300+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 300)}},
-    {"name":"gladiator",               "desc":"kill 500+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 500)}},    
-    {"name":"destoyer of all",         "desc":"kill 700+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 700)}},    
-    {"name":"bringer of death",        "desc":"kill 1000+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 1000)}},    
+    {"name":"murderer!",               "desc":"kill 150+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 150)}},
+    {"name":"gladiator",               "desc":"kill 200+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 200)}},    
+    {"name":"destoyer of all",         "desc":"kill 300+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 300)}},    
+    {"name":"bringer of death",        "desc":"kill 500+ monsters","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon >= 500)}},    
     {"name":"passafist",               "desc":"kill 0 monsters on floor 3+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 3)}},   
     {"name":"passafist+",              "desc":"kill 0 monsters on floor 5+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 5)}},    
     {"name":"passafist++",             "desc":"kill 0 monsters on floor 7+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 7)}},    
     {"name":"passafist+++",            "desc":"kill 0 monsters on floor 10+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 10)}},    
     {"name":"passafist++++",           "desc":"kill 0 monsters on floor 15+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 15)}},    
     {"name":"passafist+++++",          "desc":"kill 0 monsters on floor 20+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 20)}},    
-    {"name":"bringer of hope",         "desc":"kill 0 monsters on floor 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 30)}},    
-    {"name":"peacefull victory",       "desc":"kill 0 monsters on floor 40+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 40)}},    
-    {"name":"angel of life",           "desc":"kill 0 monsters on floor 50+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 50)}},    
+    {"name":"bringer of hope",         "desc":"kill 0 monsters on floor 25+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 25)}},    
+    {"name":"peacefull victory",       "desc":"kill 0 monsters on floor 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 30)}},    
+    {"name":"angel of life",           "desc":"kill 0 monsters on floor 35+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 35)}},    
 ]
 
 let achivements = [{"name":"open the game","best":6}];
@@ -1189,6 +1191,7 @@ class Shop {
             {"item":"+7 attack",  "cost":30, "func": () => {p.attack = p.attack + 7;}, "rarity":"mythic"},
             {"item":"+10 attack", "cost":40, "func": () => {p.attack = p.attack + 10;},"rarity":"legendary"},
             {"item":"+20 attack", "cost":75, "func": () => {p.attack = p.attack + 20;},"rarity":"accended"},
+            {"item":"-1 attack",  "cost":-10,"func": () => {p.attack = p.attack - 1;},"rarity":"cursed"},
             // + hp
             {"item":"+10 hp",     "cost":5,  "func": () => {p.hp = p.hp + 10;}, "rarity":"common"},
             {"item":"+25 hp",     "cost":13, "func": () => {p.hp = p.hp + 25;}, "rarity":"uncommon"},
@@ -1196,6 +1199,7 @@ class Shop {
             {"item":"+75 hp",     "cost":30, "func": () => {p.hp = p.hp + 75;}, "rarity":"mythic"},
             {"item":"+100 hp",    "cost":40, "func": () => {p.hp = p.hp + 100;},"rarity":"legendary"},
             {"item":"+200 hp",    "cost":75, "func": () => {p.hp = p.hp + 200;},"rarity":"accended"},
+            {"item":"-10 hp",     "cost":-10,"func": () => {p.hp = p.hp - 10;}, "rarity":"cursed"},
             // + luck
             {"item":"+1 luck",    "cost":5,  "func": () => {p.luck = p.luck + 1;}, "rarity":"common"},
             {"item":"+2 luck",    "cost":13, "func": () => {p.luck = p.luck + 2;}, "rarity":"uncommon"},
@@ -1203,6 +1207,7 @@ class Shop {
             {"item":"+4 luck",    "cost":30, "func": () => {p.luck = p.luck + 4;}, "rarity":"mythic"},
             {"item":"+5 luck",    "cost":40, "func": () => {p.luck = p.luck + 5;},"rarity":"legendary"},
             {"item":"+10 luck",   "cost":75, "func": () => {p.luck = p.luck + 10;},"rarity":"accended"},
+            {"item":"-1 luck",    "cost":-10,"func": () => {p.luck = p.luck - 1;}, "rarity":"cursed"},
             // xp
             {"item":"+3 xp",      "cost":5,  "func": () => {p.xp += 3;}, "rarity":"common"},
             {"item":"+6 xp",      "cost":13, "func": () => {p.xp += 6;}, "rarity":"uncommon"},
@@ -1210,16 +1215,20 @@ class Shop {
             {"item":"+12 xp",     "cost":30, "func": () => {p.xp += 12;}, "rarity":"mythic"},
             {"item":"+15 xp",     "cost":40, "func": () => {p.xp += 15;},"rarity":"legendary"},
             {"item":"+20 xp",     "cost":75, "func": () => {p.xp += 20;},"rarity":"accended"},
+            {"item":"-5 xp",      "cost":-20,"func": () => {p.xp -= 5;}, "rarity":"cursed"},
             // lvl's
             {"item":"+1 lvl",     "cost":27, "func": () => {p.xp += p.xpForLevels(1);}, "rarity":"rare"},
             {"item":"+2 lvl",     "cost":50, "func": () => {p.xp += p.xpForLevels(2);}, "rarity":"mythic"},
             {"item":"+3 lvl",     "cost":100,"func": () => {p.xp += p.xpForLevels(3);}, "rarity":"legendary"},
             {"item":"+5 lvl",     "cost":200,"func": () => {p.xp += p.xpForLevels(5);}, "rarity":"accended"},
+            {"item":"-1 lvl",     "cost":-60, "func": () => {p.xp -= p.xpForLevels(1);}, "rarity":"cursed"},
              // misc
             {"item":"+1 sprint",  "cost":20, "func": () => {p.sprint = p.sprint + 1;}, "rarity":"rare"},
+            {"item":"-1 sprint",  "cost":-20,"func": () => {p.sprint = p.sprint - 1;}, "rarity":"cursed"},
             {"item":"vision +1",  "cost":30, "func": () => {fogMap.adjustRange(1);}, "rarity":"mythic"},
             {"item":"vision +2",  "cost":50, "func": () => {fogMap.adjustRange(2);}, "rarity":"legendary"},
             {"item":"vision +3",  "cost":100,"func": () => {fogMap.adjustRange(3);}, "rarity":"accended"},
+            {"item":"vision -1",  "cost":-40, "func": () => {fogMap.adjustRange(-1);}, "rarity":"cursed"},
             {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended"},
             // reroll tokens
             {"item":"1 reroll token",  "cost":8,   "func": () => {reroll_tokens += 1;}, "rarity":"common"},
@@ -1227,18 +1236,18 @@ class Shop {
             {"item":"2 reroll tokens", "cost":30,  "func": () => {reroll_tokens += 2;}, "rarity":"rare"},
             {"item":"2 reroll tokens", "cost":50,  "func": () => {reroll_tokens += 2;}, "rarity":"mythic"},
             {"item":"3 reroll tokens", "cost":100, "func": () => {reroll_tokens += 3;}, "rarity":"legendary"},
-            {"item":"4 reroll tokens", "cost":150, "func": () => {reroll_tokens += 4;}, "rarity":"accended"},
+            {"item":"4 reroll tokens", "cost":150, "func": () => {reroll_tokens += 4;}, "rarity":"accended"},            
         ]
     }
 
     open(floor) {
-        const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12 };
-        const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70};
+        const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12, cursed: 3 };
+        const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70, cursed: 3};
         const available = this.shopPool
             .filter(item => floor >= rarityUnlockFloor[item.rarity] && p.money >= rarityUnlockCost[item.rarity])
             .map(item => ({
                 ...item,
-                cost: Math.max(1, Math.floor(item.cost * (1 - this.percent_discount) - this.discount))
+                cost: this.cost > 0 ? Math.max(1, Math.floor(item.cost * (1 - this.percent_discount) - this.discount)) : Math.min(-1, Math.floorMath.floor(item.cost * (1 + this.percent_discount) - this.discount))
             }));
         const offers = [];
         while (offers.length < this.avail && available.length > 0) {
@@ -1978,7 +1987,8 @@ if (saved) {
 
 
 // trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
-let tmsgs = ["","use WASD to move","hold shift to sprint","","explore to find items, and stuff.","","Items: ","$ = money","p, h, P, H = healing","","> is a shop and a staircase to the next floor"]
+let BLANK = " ".repeat(instructionWidth)
+let tmsgs = [BLANK,"use WASD to move","hold shift to sprint",BLANK,"explore to find items, and stuff.",BLANK,"Items: ","$ = money","p, h, P, H = healing",BLANK,"> is a shop and a staircase to the next floor"]
 let TUTORIAL = true;
 if (TUTORIAL) {
     tmsgs = tmsgs.map(i => i.trim()).filter(Boolean);
