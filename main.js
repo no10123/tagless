@@ -28,6 +28,7 @@ let instructions = [
     "class:      None  ",
     "discount:   -0$   ",
     "% discount: -0%   ",
+    "curse:      0     ",
     "best floor: 1     ",
     
 ]
@@ -69,7 +70,8 @@ function updateStats() {
     instructions[19] = `class:      ${Class.name}`;
     instructions[20] = `discount:   -${shop.discount}$`;
     instructions[21] = `% discount: -${shop.percent_discount}%`;
-    instructions[22] = `best floor: ${best_floor}`;
+    instructions[22] = `curse:      ${curse}`;
+    instructions[23] = `best floor: ${best_floor}`;
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
 }
 
@@ -342,7 +344,7 @@ function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W
         }
     }
     if (floor > Class.best_floor) Class.best_floor = floor;
-    percentFormula();
+    percentComplete = percentFormula();
     saveProgress();
 }
 
@@ -366,6 +368,7 @@ let Death = null
 let deathCause = "";
 
 let reroll_tokens = 0;
+let curse = 0
 
 let Volume = 10;
 let FGI = 0;
@@ -1191,7 +1194,6 @@ class Shop {
             {"item":"+7 attack",  "cost":30, "func": () => {p.attack = p.attack + 7;}, "rarity":"mythic"},
             {"item":"+10 attack", "cost":40, "func": () => {p.attack = p.attack + 10;},"rarity":"legendary"},
             {"item":"+20 attack", "cost":75, "func": () => {p.attack = p.attack + 20;},"rarity":"accended"},
-            {"item":"-1 attack",  "cost":-10,"func": () => {p.attack = p.attack - 1;},"rarity":"cursed"},
             // + hp
             {"item":"+10 hp",     "cost":5,  "func": () => {p.hp = p.hp + 10;}, "rarity":"common"},
             {"item":"+25 hp",     "cost":13, "func": () => {p.hp = p.hp + 25;}, "rarity":"uncommon"},
@@ -1199,7 +1201,6 @@ class Shop {
             {"item":"+75 hp",     "cost":30, "func": () => {p.hp = p.hp + 75;}, "rarity":"mythic"},
             {"item":"+100 hp",    "cost":40, "func": () => {p.hp = p.hp + 100;},"rarity":"legendary"},
             {"item":"+200 hp",    "cost":75, "func": () => {p.hp = p.hp + 200;},"rarity":"accended"},
-            {"item":"-10 hp",     "cost":-10,"func": () => {p.hp = p.hp - 10;}, "rarity":"cursed"},
             // + luck
             {"item":"+1 luck",    "cost":5,  "func": () => {p.luck = p.luck + 1;}, "rarity":"common"},
             {"item":"+2 luck",    "cost":13, "func": () => {p.luck = p.luck + 2;}, "rarity":"uncommon"},
@@ -1207,7 +1208,6 @@ class Shop {
             {"item":"+4 luck",    "cost":30, "func": () => {p.luck = p.luck + 4;}, "rarity":"mythic"},
             {"item":"+5 luck",    "cost":40, "func": () => {p.luck = p.luck + 5;},"rarity":"legendary"},
             {"item":"+10 luck",   "cost":75, "func": () => {p.luck = p.luck + 10;},"rarity":"accended"},
-            {"item":"-1 luck",    "cost":-10,"func": () => {p.luck = p.luck - 1;}, "rarity":"cursed"},
             // xp
             {"item":"+3 xp",      "cost":5,  "func": () => {p.xp += 3;}, "rarity":"common"},
             {"item":"+6 xp",      "cost":13, "func": () => {p.xp += 6;}, "rarity":"uncommon"},
@@ -1215,51 +1215,73 @@ class Shop {
             {"item":"+12 xp",     "cost":30, "func": () => {p.xp += 12;}, "rarity":"mythic"},
             {"item":"+15 xp",     "cost":40, "func": () => {p.xp += 15;},"rarity":"legendary"},
             {"item":"+20 xp",     "cost":75, "func": () => {p.xp += 20;},"rarity":"accended"},
-            {"item":"-5 xp",      "cost":-20,"func": () => {p.xp -= 5;}, "rarity":"cursed"},
             // lvl's
             {"item":"+1 lvl",     "cost":27, "func": () => {p.xp += p.xpForLevels(1);}, "rarity":"rare"},
             {"item":"+2 lvl",     "cost":50, "func": () => {p.xp += p.xpForLevels(2);}, "rarity":"mythic"},
             {"item":"+3 lvl",     "cost":100,"func": () => {p.xp += p.xpForLevels(3);}, "rarity":"legendary"},
             {"item":"+5 lvl",     "cost":200,"func": () => {p.xp += p.xpForLevels(5);}, "rarity":"accended"},
-            {"item":"-1 lvl",     "cost":-60, "func": () => {p.xp -= p.xpForLevels(1);}, "rarity":"cursed"},
              // misc
-            {"item":"+1 sprint",  "cost":20, "func": () => {p.sprint = p.sprint + 1;}, "rarity":"rare"},
-            {"item":"-1 sprint",  "cost":-20,"func": () => {p.sprint = p.sprint - 1;}, "rarity":"cursed"},
+            {"item":"+1 sprint",  "cost":20, "func": () => {p.sprint = p.sprint + 1;}, "rarity":"rare","unique":true},
             {"item":"vision +1",  "cost":30, "func": () => {fogMap.adjustRange(1);}, "rarity":"mythic"},
             {"item":"vision +2",  "cost":50, "func": () => {fogMap.adjustRange(2);}, "rarity":"legendary"},
             {"item":"vision +3",  "cost":100,"func": () => {fogMap.adjustRange(3);}, "rarity":"accended"},
-            {"item":"vision -1",  "cost":-40, "func": () => {fogMap.adjustRange(-1);}, "rarity":"cursed"},
-            {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended"},
+            {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended","unique":true},
             // reroll tokens
-            {"item":"1 reroll token",  "cost":8,   "func": () => {reroll_tokens += 1;}, "rarity":"common"},
-            {"item":"1 reroll token", "cost":18,  "func": () => {reroll_tokens += 1;}, "rarity":"uncommon"},
-            {"item":"2 reroll tokens", "cost":30,  "func": () => {reroll_tokens += 2;}, "rarity":"rare"},
-            {"item":"2 reroll tokens", "cost":50,  "func": () => {reroll_tokens += 2;}, "rarity":"mythic"},
-            {"item":"3 reroll tokens", "cost":100, "func": () => {reroll_tokens += 3;}, "rarity":"legendary"},
-            {"item":"4 reroll tokens", "cost":150, "func": () => {reroll_tokens += 4;}, "rarity":"accended"},            
+            {"item":"1 reroll token",  "cost":8,   "func": () => {reroll_tokens += 1;}, "rarity":"common","unique":true},
+            {"item":"1 reroll token", "cost":18,  "func": () => {reroll_tokens += 1;}, "rarity":"uncommon","unique":true},
+            {"item":"2 reroll tokens", "cost":30,  "func": () => {reroll_tokens += 2;}, "rarity":"rare","unique":true},
+            {"item":"2 reroll tokens", "cost":50,  "func": () => {reroll_tokens += 2;}, "rarity":"mythic","unique":true},
+            {"item":"3 reroll tokens", "cost":100, "func": () => {reroll_tokens += 3;}, "rarity":"legendary","unique":true},
+            {"item":"4 reroll tokens", "cost":150, "func": () => {reroll_tokens += 4;}, "rarity":"accended","unique":true},            
         ]
     }
 
     open(floor) {
-        const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12, cursed: 3 };
-        const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70, cursed: 3};
+        const rarityUnlockFloor = { common: 1, uncommon: 2, rare: 4, mythic: 6, legendary: 9, accended: 12};
+        const rarityUnlockCost = { common: 0, uncommon: 5, rare: 10, mythic: 20, legendary: 30, accended: 70};
+        const rarityCurse = { common: 1, uncommon: 1, rare: 2, mythic: 3, legendary: 4, accended: 6 };
         const available = this.shopPool
             .filter(item => floor >= rarityUnlockFloor[item.rarity] && p.money >= rarityUnlockCost[item.rarity])
             .map(item => ({
                 ...item,
-                cost: this.cost > 0 ? Math.max(1, Math.floor(item.cost * (1 - this.percent_discount) - this.discount)) : Math.min(-1, Math.floorMath.floor(item.cost * (1 + this.percent_discount) - this.discount))
+                cost: item.cost > 0 ? Math.max(1, Math.floor(item.cost * (1 - this.percent_discount) - this.discount)) : Math.min(-1, Math.floor(item.cost * (1 + this.percent_discount) - this.discount))
             }));
         const offers = [];
         while (offers.length < this.avail && available.length > 0) {
             const index = Math.floor(Math.random() * available.length);
             offers.push({ ...available.splice(index, 1)[0], purchased: false });
         }
+        const DOUBLED = {
+            "+1 attack": ()=>{p.attack+=2;}, "+3 attack": ()=>{p.attack+=6;}, "+5 attack": ()=>{p.attack+=10;},
+            "+7 attack": ()=>{p.attack+=14;},"+10 attack":()=>{p.attack+=20;},"+20 attack":()=>{p.attack+=40;},
+            "+10 hp": ()=>{p.hp+=20;}, "+25 hp": ()=>{p.hp+=50;}, "+50 hp": ()=>{p.hp+=100;},
+            "+75 hp": ()=>{p.hp+=150;},"+100 hp": ()=>{p.hp+=200;},"+200 hp": ()=>{p.hp+=400;},
+            "+1 luck": ()=>{p.luck+=2;}, "+2 luck": ()=>{p.luck+=4;}, "+3 luck": ()=>{p.luck+=6;},
+            "+4 luck": ()=>{p.luck+=8;}, "+5 luck": ()=>{p.luck+=10;},"+10 luck": ()=>{p.luck+=20;},
+            "+3 xp": ()=>{p.xp+=6;}, "+6 xp": ()=>{p.xp+=12;},"+9 xp": ()=>{p.xp+=18;},"+12 xp": ()=>{p.xp+=24;},
+            "+15 xp": ()=>{p.xp+=30;},"+20 xp": ()=>{p.xp+=40;},
+            "+1 lvl": ()=>{p.xp+=p.xpForLevels(2);},"+2 lvl": ()=>{p.xp+=p.xpForLevels(4);},
+            "+3 lvl": ()=>{p.xp+=p.xpForLevels(6);},"+5 lvl": ()=>{p.xp+=p.xpForLevels(10);},
+            "vision +1": ()=>{fogMap.adjustRange(2);},"vision +2": ()=>{fogMap.adjustRange(4);},"vision +3": ()=>{fogMap.adjustRange(6);}
+        };
+        const cands = available.filter(it => DOUBLED[it.item]);
+        if (cands.length > 0) {
+            const c = cands[Math.floor(Math.random() * cands.length)];
+            offers.push({ ...c,
+                item: c.item + " [cursed]",
+                cost: Math.max(1, Math.floor(c.cost * Math.min(1.9, 1 + 0.1 * curse))),
+                func: DOUBLED[c.item],
+                cursed: rarityCurse[c.rarity] || 1,
+                purchased: false });
+        }
         return { offers };
+
     }
 
     buy(index) {
         const item = shopState?.offers[index];
         if (!item || item.purchased || p.money < item.cost) return;
+        if (item.cursed) curse += item.cursed
         p.money -= item.cost;
         chosenItems.push(item)
         item.func();
@@ -1363,7 +1385,7 @@ class Enemy {
         this.id = 0;
         const floorTier = Math.floor((p.floor - 1) / 5);
         const levelBonus = Math.floor(p.lvl / 10);
-        this.rate = Math.min(20, floorTier + levelBonus);
+        this.rate = Math.min(20, floorTier + levelBonus + Math.floor(curse / 3));
         this.mp = []
         for (let i = 0; i < this.monsters.length; i++) {
             if (this.lvls[i] <= this.rate) {
@@ -1379,7 +1401,7 @@ class Enemy {
         this.startBattle()
     }
     cspawn(id = null, floorTier = Math.floor((p.floor - 1) / 5), levelBonus = Math.floor(p.lvl / 10), rate = null, mp = null, sv = 0) {
-        if (rate == null) rate = Math.min(20, floorTier + levelBonus);
+        if (rate == null) rate = Math.min(20, floorTier + levelBonus + Math.floor(curse / 3));
         this.rate = rate;
         if (mp) {
             this.mp = mp;
@@ -1420,7 +1442,7 @@ class Enemy {
 
         this.name = rolled.name;
         const difficultyScale = 1 + difficulty * 0.15;
-        const fs = Math.max(0, p.floor - 10);
+        const fs = Math.max(0, p.floor - 10 + curse);
         this.maxHp = Math.max(1, Math.floor((rolled.hp * Math.pow(1.06, fs) + p.floor * 0.6 + this.rate * 2) * difficultyScale));
         this.attack = Math.max(1, Math.floor((rolled.dmg * Math.pow(1.03, fs) + p.floor * 0.15) * (1 + difficulty * 0.16)));
         this.hp = this.maxHp;
@@ -1652,6 +1674,8 @@ let fm = new floorModifiers();
 let fmOn = true;
 
 function reset() {
+    reroll_tokens = 0
+    curse = 0
     battlesWon = 0
     chosenSkills = [];
     chosenItems = [];
