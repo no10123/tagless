@@ -1674,6 +1674,8 @@ let fm = new floorModifiers();
 let fmOn = true;
 
 function reset() {
+    shopState = null;
+    skill_selection = null;
     reroll_tokens = 0
     curse = 0
     battlesWon = 0
