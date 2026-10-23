@@ -49,6 +49,92 @@ function xpRequiredForLevel(level) {
     return 12 + 7 * level;
 }
 
+function cyrb128(str) {
+    let h1 = 1779033703, h2 = 3024734454, h3 = 3362450548, h4 = 50249495;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    return [(h1^h2^h3^h4)>>>0];
+}
+
+function mulberry32(a) {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+}
+
+function genlist(stringSeed, count) {
+    const numericSeed = cyrb128(stringSeed)[0];
+    const rand = mulberry32(numericSeed);    
+    const list = [];
+    for (let i = 0; i < count; i++) {
+        list.push(rand());
+    }
+    return list;
+}
+
+let SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
+let s_pos = {"shop":0,"lvl":0,"map":0,"misc":0}
+function genSeeds(seed) {
+    s_pos = {shop:0, lvl:0, map:0, misc:0};
+    SEEDS.shop = genlist("SHOP: " + seed,1000);
+    SEEDS.lvl  = genlist("LVL:  " + seed,1000);
+    SEEDS.map  = genlist("MAP:  " + seed,1000);
+    SEEDS.misc = genlist("MISC: " + seed,1000);
+}
+
+function seedRand(place) {
+    const pool = SEEDS[place];
+    if (Array.isArray(pool) && pool.length > 0) {
+        s_pos[place] = (s_pos[place] || 0) + 1;
+        return pool[s_pos[place] % pool.length];
+    }
+    return Math.random();
+}
+
+// 
+let t_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
+let b_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
+
+let trees = false;
+
+function updateB() {
+    b_trees.floor     = Math.max(b_trees.floor,     p.floor      )
+    b_trees.money     = Math.max(b_trees.money,     p.money      )
+    b_trees.hp        = Math.max(b_trees.hp,        p.hp         )
+    b_trees.attack    = Math.max(b_trees.attack,    p.attack     )
+    b_trees.luck      = Math.max(b_trees.luck,      p.luck       )
+    b_trees.lvl       = Math.max(b_trees.lvl,       p.lvl        )
+    b_trees.xp        = Math.max(b_trees.xp,        p.xp         )
+    b_trees.vision    = Math.max(b_trees.vision,    fogMap.range )
+    b_trees.totalTime = Math.max(b_trees.totalTime, t.run        )
+    b_trees.curse     = Math.max(b_trees.curse,     curse        )
+}
+
+function updateT() {
+    t_trees.floor     = (t_trees.floor     + p.floor      )
+    t_trees.money     = (t_trees.money     + p.money      )
+    t_trees.hp        = (t_trees.hp        + p.hp         )
+    t_trees.attack    = (t_trees.attack    + p.attack     )
+    t_trees.luck      = (t_trees.luck      + p.luck       )
+    t_trees.lvl       = (t_trees.lvl       + p.lvl        )
+    t_trees.xp        = (t_trees.xp        + p.xp         )
+    t_trees.vision    = (t_trees.vision    + fogMap.range )
+    t_trees.totalTime = (t_trees.totalTime + t.run        )
+    t_trees.curse     = (t_trees.curse     + curse        )
+}
+
 function updateStats() {
     if (Class.goldToXp) {p.xp = p.xp + p.money; p.money = 0;};
     if (Class.xpToGold) {p.money = p.money + p.xp; p.xp = 0;};
@@ -73,6 +159,7 @@ function updateStats() {
     instructions[22] = `curse:      ${curse}`;
     instructions[23] = `best floor: ${best_floor}`;
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
+    updateB();
 }
 
 const konami = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
@@ -126,7 +213,7 @@ let Classes = [
     {...BASE, "name":"theif", "unlocked":true, "winBatle":()=>{p.money += 2;}, "coinPickup":()=>{p.money += 2;}, "desc":"+2 gold to all incomes"},
     {...BASE, "name":"fighter", "unlocked":true, "GameStart":()=>{p.attack_mult = 1.25;}, "desc":"x1.25 damage"},
     {...BASE, "name":"cat", "LevelUp":()=>{p.luck += 2;}, "desc":"+2 luck per level"},
-    {...BASE, "name":"gambler", "OnAttack":(d)=>{const r=Math.random(); return r<0.35 ? d*2 : r<0.85 ? d : 0;}, "desc":"35% 2x dmg, 50% x1, 15% x0"},
+    {...BASE, "name":"gambler", "OnAttack":(d)=>{const r=seedRand("misc"); return r<0.35 ? d*2 : r<0.85 ? d : 0;}, "desc":"35% 2x dmg, 50% x1, 15% x0"},
     {...BASE, "name":"apprentice", "GameStart":()=>{skill_selection = p.rollSkillSelection();}, "desc":"start with skill of choice (will be tripled)"},
     {...BASE, "name":"alchemist", "GameStart":()=>{p.potion_affect = 1.5;}, "desc":"x1.5 potion effect"},
     {...BASE, "name":"forgotten", "noShop":true, "noCoins":true, "noPotions":true, "extraTriggers":5,
@@ -152,16 +239,16 @@ let Classes = [
     }, "desc":"steals the cheapest item in the shop"},
     {...BASE, "name":"rich", "GameStart":()=>{p.money += 13;
         const commons = shop.shopPool.filter(i=>i.rarity==="common");
-        commons[Math.floor(Math.random()*commons.length)].func(); p.check_lvl();
+        commons[Math.floor(seedRand("misc")*commons.length)].func(); p.check_lvl();
     }, "desc":"starts with a free common item and 13 gold"},
     {...BASE, "name":"runner", "FloorStart":()=>{fogMap.adjustRange(1);}, "desc":"+1 vision each floor"},
     {...BASE, "name":"gaurdian", "GameStart":()=>{p.hp += 20;}, "OnAttack":(d)=>d + Math.floor(p.hp / 30), "desc":"more damage with more hp"},
-    {...BASE, "name":"batle mage", "potionPickup":()=>{if (Math.random() < 0.1) p.attack += 1;}, "desc":"potions have a 10% chance to give +1 attack"},
+    {...BASE, "name":"batle mage", "potionPickup":()=>{if (seedRand("misc") < 0.1) p.attack += 1;}, "desc":"potions have a 10% chance to give +1 attack"},
     {...BASE, "name":"mystic", "LevelUp":(skill)=>{if (p.lvl % 7 === 0 && skill) skill.func();},
         "BattleStart":()=>{p.attack += p.luck;}, "winBatle":()=>{p.attack -= p.luck;}, "fleeBattle":()=>{p.attack -= p.luck;},
         "desc":"gains a bonus every 7 levels and attack is increased by luck"},
     {...BASE, "name":"barbarian", "GameStart":()=>{p.attack_mult = 1.5;}, "FloorStart":()=>{p.hp -= 5;}, "desc":"x1.5 damage, -5 hp at start of floor"},
-    {...BASE, "name":"trickster", "FloorStart":()=>{reroll_tokens++;}, "OnDamage":(d)=>Math.random() < 0.1 ? 0 : d, "desc":"+1 reroll token each floor, 10% to dodge attacks"},
+    {...BASE, "name":"trickster", "FloorStart":()=>{reroll_tokens++;}, "OnDamage":(d)=>seedRand("misc") < 0.1 ? 0 : d, "desc":"+1 reroll token each floor, 10% to dodge attacks"},
     {...BASE, "name":"monk", "goldToXp":true, "desc":"all gold becomes xp, no shop"},
     {...BASE, "name":"greed", "xpToGold":true, "desc":"all xp becomes gold, no skills"},
     {...BASE, "name":"investor","FloorStart":()=>{p.money = p.money + Math.floor(p.money * 0.1)}, "desc":"gain 10% coins each floor."},
@@ -526,8 +613,8 @@ function cls() {
 function getEmptyTile() {
     let x, y;
     do {
-        x = Math.floor(Math.random() * (W - 2)) + 1;
-        y = Math.floor(Math.random() * (H - 2)) + 1;
+        x = Math.floor(seedRand("map") * (W - 2)) + 1;
+        y = Math.floor(seedRand("map") * (H - 2)) + 1;
     } while (grid[y][x] !== air);
     return {x, y};
 }
@@ -558,7 +645,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
                         carvedTiles++;}}}}
 
         const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-        const randomDir = dirs[Math.floor(Math.random() * dirs.length)];
+        const randomDir = dirs[Math.floor(seedRand("map") * dirs.length)];
         
         walkerX += randomDir[0];
         walkerY += randomDir[1];
@@ -570,8 +657,8 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     }
 
     for (let i = 0; i < pillars; i++) {
-        let px = Math.floor(Math.random() * (W - 2)) + 1;
-        let py = Math.floor(Math.random() * (H - 2)) + 1;
+        let px = Math.floor(seedRand("map") * (W - 2)) + 1;
+        let py = Math.floor(seedRand("map") * (H - 2)) + 1;
         
         if (grid[py][px] === air && (px !== walkerX || py !== walkerY)) {
             grid[py][px] = wall;}}
@@ -660,12 +747,18 @@ function draw() {
             "5. CREDITS",
             "6. help",
             "7. leaderboard",
+            "8. trees",
+            "9. unlock all",
             "",
             `best score: ${localStorage.getItem("tagless_best") || 0}`,
             `percent complete: ${percentComplete}%`,
             "",
             border
         ];
+        window.lines = lines;
+        ay = Math.max(0, Math.min(ay, Math.max(0, lines.length - Math.max(1, H - 5))));
+        lines.splice(0, ay);
+        lines.length = Math.min(lines.length, Math.max(1, H - 5));
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
             const text = line.slice(0, W);
@@ -923,6 +1016,8 @@ function draw() {
         lines.push('')
         lines.push(`- a -- difficulty: ${["easy","medium","hard","expert","master","godlike","ascended"][difficulty]} -- d -`)
         lines.push('')
+        lines.push('alt - seeded (keep blank for gen seed)')
+        lines.push('')
         lines.push('0. play game')
         lines.push('')
         lines.push(border)
@@ -955,6 +1050,52 @@ function draw() {
             ].filter(Boolean).join(" | "));
         }
         lines.push("", "esc - back to main menu", "", border);
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (trees) {
+        // {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
+        const lines = [
+            border,
+            "TREES:",
+            "-- tree of floors --",
+            `best:  ${b_trees.floor}`,
+            `total: ${t_trees.floor}`,
+            "-- tree of wealth --",
+            `best:  ${b_trees.money}`,
+            `total: ${t_trees.money}`,
+            "-- tree of health --",
+            `best:  ${b_trees.hp}`,
+            `total: ${t_trees.hp}`,
+            "-- tree of power --",
+            `best:  ${b_trees.attack}`,
+            `total: ${t_trees.attack}`,
+            "-- tree of luck --",
+            `best:  ${b_trees.luck}`,
+            `total: ${t_trees.luck}`,
+            "-- tree of lvl --",
+            `best:  ${b_trees.lvl}`,
+            `total: ${t_trees.lvl}`,
+            "-- tree of xp --",
+            `best:  ${b_trees.xp}`,
+            `total: ${t_trees.xp}`,
+            "-- tree of sight --",
+            `best:  ${b_trees.vision}`,
+            `total: ${t_trees.vision}`,
+            "-- tree of time --",
+            `best:  ${b_trees.totalTime}`,
+            `total: ${t_trees.totalTime}`,
+            "-- cursed tree --",
+            `best:  ${b_trees.curse}`,
+            `total: ${t_trees.curse}`,
+            "",
+            "esc - go back to main menu",
+            border
+        ];
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
             const text = line.slice(0, W);
@@ -1036,7 +1177,7 @@ class Player {
             if (grid[nextY][nextX] == s.sym) {
                 goUp = true;
             } else if (grid[nextY][nextX] == m.sym) {
-                if (Class.mimicChance && Math.random() < Class.mimicChance && !battle) {
+                if (Class.mimicChance && seedRand("misc") < Class.mimicChance && !battle) {
                     grid[nextY][nextX] = air;
                     enemy.cspawn();
                     if (battle) {battle.mimic = true;}
@@ -1090,7 +1231,7 @@ class Player {
         ];
         let candidates = available.filter(option => !excluded.includes(option));
         if (candidates.length < this.skill_choices) candidates = available;
-        return candidates.sort(() => 0.5 - Math.random()).slice(0, this.skill_choices);
+        return candidates.sort(() => 0.5 - seedRand("lvl")).slice(0, this.skill_choices);
     }
 
     xpForLevels(count) {
@@ -1130,7 +1271,7 @@ class Player {
 
 class Money {
     constructor(sym) {
-        this.l = Math.max(1, Math.round((Math.floor(Math.random() * 10) + 1) * Math.sqrt(W * H / 2856)));
+        this.l = Math.max(1, Math.round((Math.floor(seedRand("map") * 10) + 1) * Math.sqrt(W * H / 2856)));
         this.x = [];
         this.y = [];
         this.sym = sym;
@@ -1163,12 +1304,12 @@ class stairs {
         p.floor++;
         best_floor = Math.max(best_floor, p.floor)
         newFloor({
-                openRatio: 0.34 + Math.random() * 0.16,
+                openRatio: 0.34 + seedRand("map") * 0.16,
             pillars: randomInt([
                 Math.max(4, Math.floor(W * H * 0.006)),
                 Math.max(8, Math.floor(W * H * 0.018))
             ]),
-            brush: Math.random() < 0.8 ? 1 : 2
+            brush: seedRand("map") < 0.8 ? 1 : 2
         });
         if (!Class.noCoins) new Money(m.sym);
         p.place("@");
@@ -1225,7 +1366,7 @@ class Shop {
             {"item":"vision +1",  "cost":30, "func": () => {fogMap.adjustRange(1);}, "rarity":"mythic"},
             {"item":"vision +2",  "cost":50, "func": () => {fogMap.adjustRange(2);}, "rarity":"legendary"},
             {"item":"vision +3",  "cost":100,"func": () => {fogMap.adjustRange(3);}, "rarity":"accended"},
-            {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(Math.random() * 20); p.money = p.money + Math.ceil(Math.random() * 20);}, "rarity":"accended","unique":true},
+            {"item":"lucky coin", "cost":100, "func": () => {p.luck = p.luck + Math.ceil(seedRand("misc") * 20); p.money = p.money + Math.ceil(seedRand("misc") * 20);}, "rarity":"accended","unique":true},
             // reroll tokens
             {"item":"1 reroll token",  "cost":8,   "func": () => {reroll_tokens += 1;}, "rarity":"common","unique":true},
             {"item":"1 reroll token", "cost":18,  "func": () => {reroll_tokens += 1;}, "rarity":"uncommon","unique":true},
@@ -1248,7 +1389,7 @@ class Shop {
             }));
         const offers = [];
         while (offers.length < this.avail && available.length > 0) {
-            const index = Math.floor(Math.random() * available.length);
+            const index = Math.floor(seedRand("shop") * available.length);
             offers.push({ ...available.splice(index, 1)[0], purchased: false });
         }
         const DOUBLED = {
@@ -1266,7 +1407,7 @@ class Shop {
         };
         const cands = available.filter(it => DOUBLED[it.item]);
         if (cands.length > 0) {
-            const c = cands[Math.floor(Math.random() * cands.length)];
+            const c = cands[Math.floor(seedRand("shop") * cands.length)];
             offers.push({ ...c,
                 item: c.item + " [cursed]",
                 cost: Math.max(1, Math.floor(c.cost * Math.min(1.9, 1 + 0.1 * curse))),
@@ -1375,12 +1516,12 @@ class Enemy {
     }
     spawn() {
         const chance = Math.min(this.cmax, 3);
-        const r = Math.ceil(Math.random() * this.cmax);
+        const r = Math.ceil(seedRand("misc") * this.cmax);
         if (r > chance + this.dc) {
             this.dc++
             return;
         } else {
-            this.dc = -Math.floor(Math.random() * 10)
+            this.dc = -Math.floor(seedRand("misc") * 10)
         };
         this.id = 0;
         const floorTier = Math.floor((p.floor - 1) / 5);
@@ -1395,7 +1536,7 @@ class Enemy {
         if (this.mp.length === 0) {
             this.id = 0;
         } else {
-            this.id = this.mp[Math.floor(Math.random() * this.mp.length)];
+            this.id = this.mp[Math.floor(seedRand("misc") * this.mp.length)];
         }
         this.setStats()
         this.startBattle()
@@ -1411,7 +1552,7 @@ class Enemy {
                 if (this.lvls[i] <= this.rate) this.mp.push(i);
             }
         }
-        this.id = id == null ? (this.mp.length ? this.mp[Math.floor(Math.random() * this.mp.length)] : 0) : id;
+        this.id = id == null ? (this.mp.length ? this.mp[Math.floor(seedRand("misc") * this.mp.length)] : 0) : id;
         this.setStats(sv);
         this.startBattle();
     }
@@ -1428,10 +1569,10 @@ class Enemy {
 
         // 40% chance for random variant
         for (let i = 0; i < sv + 1; i++) {
-            if (Math.random() < 0.3 + difficulty * 0.1) {
+            if (seedRand("misc") < 0.3 + difficulty * 0.1) {
                 const pool = this.varriants.filter(v => v.lvl <= this.rate);
                 if (pool.length) {
-                    const v = pool[Math.floor(Math.random() * pool.length)];
+                    const v = pool[Math.floor(seedRand("misc") * pool.length)];
                     const vr = Object.fromEntries(Object.entries(v).map(([key, value]) => [key, Array.isArray(value) ? randomInt(value) : value]));
                     rolled.hp += vr.hp; rolled.dmg += vr.dmg; rolled.ac += vr.ac;
                     rolled.gold += vr.gold; rolled.xp += vr.xp;
@@ -1477,7 +1618,7 @@ class Enemy {
     }
     playerAttack() {
         if (!battle) return;
-        let hit = Math.ceil(Math.random() * 100) + p.luck;
+        let hit = Math.ceil(seedRand("misc") * 100) + p.luck;
         let damage;
         if (hit > battle.enemy.ac) {
             damage = Math.max(0, Class.OnAttack(Math.round(p.attack * p.attack_mult)));
@@ -1493,7 +1634,7 @@ class Enemy {
     }
     flee() {
         if (!battle) return;
-        if (Math.random() * (p.luck/10 + 1) < 0.5) {
+        if (seedRand("misc") * (p.luck/10 + 1) < 0.5) {
             gameMessage = "You escaped!";
             battle = null;
             Class.fleeBattle();
@@ -1586,7 +1727,7 @@ class potion {
     }
     spawn () {
         let factor = p ? 1 + (p.luck / 10) : 1;
-        this.a = Math.floor(this.w[Math.floor(Math.random() * this.w.length)] * factor * (p ? p.potion_spawn : 1) * Math.sqrt(W * H / 2856) + Math.random());
+        this.a = Math.floor(this.w[Math.floor(seedRand("map") * this.w.length)] * factor * (p ? p.potion_spawn : 1) * Math.sqrt(W * H / 2856) + seedRand("map"));
         if (this.a > 0) {
             for (let i = 0; i < this.a; i++) {
                 this.place()
@@ -1615,18 +1756,18 @@ class encounters {
             this.events = [
                 {"name":"it's a monster.",       "event":()=>{enemy.cspawn(undefined, undefined, undefined, undefined, undefined, 1)}},
                 {"name":`+${10 * m.mult} coins`, "event":()=>{p.money += 10 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 12); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
+                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(seedRand("misc") * 12); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
                 {"name":'shop',                  "event":()=>{shopState = shop.open(p.floor)}},
             ];
         } else {
             this.events = [
                 {"name":"it's a monster.",       "event":()=>{enemy.cspawn()}},
                 {"name":`+${5 * m.mult} coins`,  "event":()=>{p.money += 5 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(Math.random() * 6); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
+                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(seedRand("misc") * 6); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
                 {"name":'+1 reroll token',       "event":()=>{reroll_tokens += 1}},
             ];
         };
-        const event = this.events[Math.floor(Math.random() * this.events.length)];
+        const event = this.events[Math.floor(seedRand("misc") * this.events.length)];
         notify("EVENT",event.name);
         event.event();
     }
@@ -1651,7 +1792,7 @@ class floorModifiers {
     }
     newFloor () {
         this.lfm.onExit();
-        this.lfm = this.pool[Math.floor(Math.random() * this.pool.length)]
+        this.lfm = this.pool[Math.floor(seedRand("map") * this.pool.length)]
         this.lfm.onEnter();
         notify("Floor Variant: ",this.lfm.name)
     }
@@ -1689,12 +1830,12 @@ function reset() {
     t = new timer();
     p = null;
     newFloor({
-        openRatio: 0.34 + Math.random() * 0.16,
+        openRatio: 0.34 + seedRand("map") * 0.16,
         pillars: randomInt([
             Math.max(4, Math.floor(W * H * 0.006)),
             Math.max(8, Math.floor(W * H * 0.018))
         ]),
-        brush: Math.random() < 0.8 ? 1 : 2
+        brush: seedRand("map") < 0.8 ? 1 : 2
     });
     shop = new Shop();
     p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
@@ -1745,6 +1886,7 @@ document.addEventListener("keydown", (event) => {
 
             return;
         }
+        updateB();
         reset();
         return;
     }
@@ -1757,6 +1899,8 @@ document.addEventListener("keydown", (event) => {
             achivement_menu = false;
             start_config = true;
             leaderboard_menu = false;
+            trees = false;
+            SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
             reset();
             draw();
             return;
@@ -1768,6 +1912,7 @@ document.addEventListener("keydown", (event) => {
             achivement_menu = false;
             start_config = false;
             leaderboard_menu = false;
+            trees = false;
             draw();
             return;
         } else if (key === "3") {
@@ -1797,6 +1942,16 @@ document.addEventListener("keydown", (event) => {
             loadLeaderboard();
             draw();
             return;
+        } else if (key === "8") {
+            mainMenu = false;
+            trees = true;
+            ay = 0;
+            draw();
+            return;
+        } else if (key === "9") {
+            for (let c in Classes) {
+                c.unlocked = true;
+            }
         }
     } else if (leaderboard_menu) {
         const pageSize = Math.max(1, Math.floor((H - 8) / 3));
@@ -1928,6 +2083,31 @@ document.addEventListener("keydown", (event) => {
             achivement_menu = true
             A_class = Classes.indexOf(Class)
             ay = 0
+        }
+        if (event.altKey) {
+            let Seed = prompt("Seed: (blank will gen one for you)");
+            if (Seed == null || String(Seed).trim() === "") {
+                Seed = Math.random().toString(36).substring(2, 12);
+            }
+            genSeeds(String(Seed).trim());
+        }
+    } else if (trees) {
+        if (key.toLocaleLowerCase() === "w") {
+            ay = Math.max(0, ay - 1);
+            draw();
+            return;
+        }
+        if (key.toLocaleLowerCase() === "s") {
+            ay = Math.min(Math.max(0, window.lines.length - Math.max(1, H - 5)), ay + 1);
+            draw();
+            return;
+        }
+        if (key === "Escape") {
+            trees = false;
+            mainMenu = true;
+            ay = 0;
+            draw();
+            return;
         }
     } else if (achivement_menu) {
         if (key.toLocaleLowerCase() === "w") {
