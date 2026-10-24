@@ -103,7 +103,25 @@ function seedRand(place) {
     return Math.random();
 }
 
-// 
+// compendium
+let compendiumPage = false;
+
+let compendium = {"monsters":[],"items":[],"skills":[],"floors":[],"variants":[]}
+function addEntry (type, value) {
+    const category = {
+        monster: "monsters",
+        item: "items",
+        skill: "skills",
+        floor: "floors",
+        variant: "variants"
+    }[type] || type;
+    const entries = compendium[category];
+    if (!Array.isArray(entries) || value == null) return;
+    const key = value.name ?? value.item;
+    if (!entries.some(entry => (entry.name ?? entry.item) === key)) entries.push(value);
+}
+
+// trees
 let t_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
 let b_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
 
@@ -748,6 +766,7 @@ function draw() {
             "6. help",
             "7. leaderboard",
             "8. trees",
+            "c. compendium",
             "9. unlock all",
             "",
             `best score: ${localStorage.getItem("tagless_best") || 0}`,
@@ -968,7 +987,13 @@ function draw() {
             `floor: ${p.floor}`,
             `lvl: ${p.lvl}, xp: ${p.xp}`,
             `attack: ${p.attack}, hp: ${p.hp}`,
+            `luck: ${p.luck}, vision: ${p.vision}`,
+            `disscounts: -${shop.discount}$, -${shop.percent_discount}%`,
+            `reroll tokens: ${reroll_tokens}, curse: ${curse}`,
+            `size: ${W} x ${H}`,
             `money: ${p.money}$`,
+            `Monsters destroyed: ${battlesWon}`,
+            `items bought: ${chosenItems.length}`,
             `Time: ${t.run}`,
             "",
             `score: ${Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25))}`,
@@ -1096,6 +1121,39 @@ function draw() {
             "esc - go back to main menu",
             border
         ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (compendiumPage) {
+        const lines = [
+            border,
+            `Compendium: ${Math.round((compendium.monsters.length + compendium.variants.length + compendium.items.length)  / (enemy.monsters.length + enemy.varriants.length + shop.shopPool.length) * 100)}%`,
+            "",
+            `-- monsters: ${Math.round(compendium.monsters.length  / enemy.monsters.length * 100)}% --`,
+            "name - hp - attack - ac - coins - xp",
+        ];
+        // addEntry
+        for (let m of compendium.monsters) {
+            lines.push(`${m.name} | ${m.hp} | ${m.dmg} | ${m.ac} | ${m.gold} | ${m.xp}`)
+        }
+        lines.push("")
+        lines.push(`-- variants: ${Math.round(compendium.variants.length  / enemy.varriants.length * 100)}% --`)
+        for (let m of compendium.variants) {
+            lines.push(`${m.name} | ${m.hp} | ${m.dmg} | ${m.ac} | ${m.gold} | ${m.xp}`)
+        }
+        lines.push("")
+        lines.push(`-- items: ${Math.round(compendium.items.length  / shop.shopPool.length * 100)}% --`)
+        lines.push("name | price | rarity")
+        for (let m of compendium.items) {
+            lines.push(`${m.item} | ${m.cost} | ${m.rarity}`)
+        }
+        lines.push("")
+        lines.push("esc - go back to main menu")
+        lines.push(border)
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
             const text = line.slice(0, W);
@@ -1427,6 +1485,7 @@ class Shop {
         chosenItems.push(item)
         item.func();
         item.purchased = true;
+        addEntry("item",item);
         p.check_lvl();
         updateStats();
         draw();
@@ -1566,6 +1625,7 @@ class Enemy {
                 Array.isArray(value) ? randomInt(value) : value
             ])
         );
+        addEntry("monster",this.monster);
 
         // 40% chance for random variant
         for (let i = 0; i < sv + 1; i++) {
@@ -1577,6 +1637,7 @@ class Enemy {
                     rolled.hp += vr.hp; rolled.dmg += vr.dmg; rolled.ac += vr.ac;
                     rolled.gold += vr.gold; rolled.xp += vr.xp;
                     rolled.name = vr.name + " " + rolled.name;
+                    addEntry("variants",vr);
                 }
             }
         }
@@ -1793,6 +1854,7 @@ class floorModifiers {
     newFloor () {
         this.lfm.onExit();
         this.lfm = this.pool[Math.floor(seedRand("map") * this.pool.length)]
+        addEntry("floor",this.lfm);
         this.lfm.onEnter();
         notify("Floor Variant: ",this.lfm.name)
     }
@@ -1900,6 +1962,7 @@ document.addEventListener("keydown", (event) => {
             start_config = true;
             leaderboard_menu = false;
             trees = false;
+            compendiumPage = false;
             SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
             reset();
             draw();
@@ -1913,6 +1976,7 @@ document.addEventListener("keydown", (event) => {
             start_config = false;
             leaderboard_menu = false;
             trees = false;
+            compendiumPage = false;
             draw();
             return;
         } else if (key === "3") {
@@ -1952,6 +2016,11 @@ document.addEventListener("keydown", (event) => {
             for (let c in Classes) {
                 c.unlocked = true;
             }
+        } else if (key === "c") {
+            compendiumPage = true;
+            mainMenu = false;
+            draw();
+            return;
         }
     } else if (leaderboard_menu) {
         const pageSize = Math.max(1, Math.floor((H - 8) / 3));
@@ -2173,7 +2242,10 @@ function saveProgress() {
         achivements,
         classes: Object.fromEntries(Classes.map(c => [c.name, {
             unlocked: c.unlocked, best_floor: c.best_floor, achivements: c.achivements
-        }]))
+        }])),
+        compendium,
+        t_trees,
+        b_trees
     }));
 }
 const saved = JSON.parse(localStorage.getItem("tagless_progress") || "null");
@@ -2184,6 +2256,9 @@ if (saved) {
         const s = saved.classes && saved.classes[c.name];
         if (s) { c.unlocked = s.unlocked; c.best_floor = s.best_floor || 0; c.achivements = s.achivements || c.achivements; }
     }
+    compendium = saved.compendium || compendium;
+    t_trees = saved.t_trees || t_trees;
+    b_trees = saved.b_trees || b_trees;
     progressLoaded = true;
 }
 
