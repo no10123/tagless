@@ -275,9 +275,10 @@ let Classes = [
     {...BASE, "name":"bladesmith","LevelUp":(skill)=>{p.attack += 1}, "desc":"gain 1 attack every levl."},
     {...BASE, "name":"cyadian","GameStart":()=>{p.sprint = Math.max(W,H); p.move_speed = Math.max(W,H)},"FloorStart":()=>{p.sprint = Math.max(0, p.sprint - 1); p.attack += (p.floor % 2 == 0) ? 1 : 0}, "desc":"start with max speed, and sprint, -1 sprint each floor, and gain 1 attack every seccond floor."},
     {...BASE, "name":"gladiator","GameStart":()=>{p.hp -= 50},"OnDamage":(d)=>{p.money += Math.floor(d/2); return d;}, "desc":"start with 50 less hp, gain money when you take damgege."},
-    {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"}
+    {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"},
+    {...BASE, "name":"blind", "GameStart":()=>{fogMap.adjustRange(-4)}, "floorStart":()=>{p.attack += fogMap.range},"desc":"-4 vision, +1 attack each floor per vision.","unlocked":true},
 ]
-// 31 total classes, and more comming soon... , 
+// 32 total classes, and more comming soon... , 
 // maybye will make classes arround some more niche stuff.
 let Class = Classes[0];
 let avail_classes = Classes;
@@ -319,6 +320,9 @@ function notify(name, ws) {
 let battlesWon = 0;
 let chosenSkills = [];
 let chosenItems  = [];
+
+let challengePage = false;
+let encounter = false;
 
 let locked_achivements = [
     // floor based
@@ -373,7 +377,7 @@ let locked_achivements = [
     {"name":"gm+4 adventurer",         "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
     // range
     {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"battle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
-    {"name":"platnium eye",            "desc":"have 20+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
+    {"name":"platnium eye",            "desc":"have 20+ vision","unlock":"blind","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
     {"name":"third eye",               "desc":"have 25+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 25);}},
     {"name":"Glasses!",                "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
     // unique. 
@@ -415,6 +419,12 @@ let locked_achivements = [
     {"name":"bringer of hope",         "desc":"kill 0 monsters on floor 25+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 25)}},    
     {"name":"peacefull victory",       "desc":"kill 0 monsters on floor 30+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 30)}},    
     {"name":"angel of life",           "desc":"kill 0 monsters on floor 35+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (battlesWon == 0 && floor >= 35)}},    
+    // curse 
+    {"name":"first curse",             "desc":"buy a cursed item","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (curse > 0)}},
+    {"name":"decade of curses",        "desc":"get 10+ curse","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (curse >= 10)}},
+    {"name":"lucky number 13",         "desc":"get 13+ curse","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (curse >= 13)}},
+    {"name":"collection of curses",    "desc":"get 21+ curse","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (curse >= 21)}},
+    {"name":"hoard of curses",         "desc":"get 33+ curse","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (curse >= 33)}},
 ]
 
 let achivements = [{"name":"open the game","best":6}];
@@ -488,8 +498,9 @@ let leaderboard = [];
 let leaderboardError = "";
 let leaderboardLoaded = false;
 let leaderboardPage = 0;
+let leaderboardClassIndex = -1;
 
-async function loadLeaderboard() {
+async function loadLeaderboard(ccc=null) {
     leaderboard = [];
     leaderboardError = "";
     leaderboardLoaded = false;
@@ -528,7 +539,7 @@ async function loadLeaderboard() {
                 time: Number.isFinite(stats.time) ? formatTime(stats.time) : (titleParts[2] || "unknown"),
                 difficulty: ["easy", "medium", "hard", "expert", "master", "godlike", "ascended"][Number(titleParts[3])] || "unknown"
             };
-        }).filter(Boolean)
+        }).filter(Boolean).filter(i => ccc === null || i.className === ccc)
          .sort((a, b) => {
          if (b.score !== a.score) {
              return b.score - a.score;
@@ -541,7 +552,7 @@ async function loadLeaderboard() {
          const MB = mB * 60 + sB;
          return MA - MB; 
          })
-         .slice(0, 10);
+         //.slice(0, 10);
     } catch (error) {
         leaderboardError = error instanceof Error ? error.message : String(error);
     }
@@ -767,6 +778,7 @@ function draw() {
             "7. leaderboard",
             "8. trees",
             "c. compendium",
+            "f. Daily seed",
             "9. unlock all",
             "",
             `best score: ${localStorage.getItem("tagless_best") || 0}`,
@@ -1054,7 +1066,7 @@ function draw() {
         }
         body.innerText = display;
     } else if (leaderboard_menu) {
-        let lines = [border, "LEADERBOARD", ""];
+        let lines = [border, "LEADERBOARD", "", `-- CLASS: ${Classes.map(i => i.name)[leaderboardClassIndex] || "all"} --`];
         if (leaderboardError) lines.push(`error: ${leaderboardError}`);
         else if (!leaderboardLoaded) lines.push("loading...");
         else if (leaderboard.length === 0) lines.push("no scores yet, so go play!");
@@ -1159,6 +1171,40 @@ function draw() {
             const text = line.slice(0, W);
             const left = Math.floor((W - text.length) / 2);
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+        }
+        body.innerText = display;
+    } else if (encounter) {
+        // encounter = []
+        const panel = complexStats ? [...instructions, "", "c to see less stats"] : [instructions[4], instructions[6], instructions[7], instructions[5], instructions[10], "", "C to see full stats"];
+        const toasts = [];
+        for (let i = 0; i < notifications.length; i++) {
+            const n = notifications[i];
+            const text = [` ${n.name}: `,...n.words];
+            const tw = instructionWidth
+            toasts.push("");
+            toasts.push("┌" + "─".repeat(tw) + "┐");
+            for (let j = 0; j < text.length; j++) {
+                toasts.push("│" + text[j] + " ".repeat(Math.max(0,tw - text[j].length)) + "│");
+            }
+            toasts.push("└" + "─".repeat(tw) + "┘");
+        }
+        const column = [...panel,"","NOTIFICATIONS: ", ...toasts];
+        const lines = [
+            `ENCOUNTER`,
+            `Gold: ${p.money}$, hp: ${p.hp}`,
+            "",
+            ...encounter.map(i => i.name),
+            "",
+            (reroll_tokens > 0) ? `[R] Refresh encounter (reroll tokens: ${reroll_tokens})` : "",
+            "",
+            "ESC. leave encounter"
+        ];
+        let display = "\n  " + " ".repeat(W);
+        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+            const instruction = i < column.length ? column[i] : " ";
+            const text = line.slice(0, W);
+            const left = Math.floor((W - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(W - left) + instruction;
         }
         body.innerText = display;
     } else {
@@ -1385,6 +1431,7 @@ class Shop {
         this.percent_discount = 0;
         this.discount = 0;
         this.avail = 3;
+        // shop types, normal, blood = hp instead of money, 
         this.shopPool = [
             // + attack
             {"item":"+1 attack",  "cost":5, "func":  () => {p.attack = p.attack + 1;}, "rarity":"common"},
@@ -1813,24 +1860,28 @@ class encounters {
         grid[y][x] = this.sym;
     }
     trigger() {
-        if (this.big) {
-            this.events = [
-                {"name":"it's a monster.",       "event":()=>{enemy.cspawn(undefined, undefined, undefined, undefined, undefined, 1)}},
-                {"name":`+${10 * m.mult} coins`, "event":()=>{p.money += 10 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(seedRand("misc") * 12); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
-                {"name":'shop',                  "event":()=>{shopState = shop.open(p.floor)}},
-            ];
-        } else {
-            this.events = [
-                {"name":"it's a monster.",       "event":()=>{enemy.cspawn()}},
-                {"name":`+${5 * m.mult} coins`,  "event":()=>{p.money += 5 * m.mult}},
-                {"name":'trap',                  "event":()=>{p.hp -= Math.ceil(seedRand("misc") * 6); if (p.hp <= 0) {Death = true; deathCause = "a trap"}}},
-                {"name":'+1 reroll token',       "event":()=>{reroll_tokens += 1}},
-            ];
-        };
-        const event = this.events[Math.floor(seedRand("misc") * this.events.length)];
-        notify("EVENT",event.name);
-        event.event();
+        encounter = this.openTrades(big);
+    }
+    openTrades(big) {
+        const t = 1 + Math.floor(p.floor / 10);
+        const pool = big ? [
+            {"name":`sparring: -${50*t} hp for +${8*t} attack`,         "cost":() => p.hp - 50 * t >= 1,           "func":()=>{p.hp -= 50 * t; p.attack += 8 * t;}},
+            {"name":`exorcism: -25% hp for -5 curse`,                   "cost":() => curse > 0 && p.hp >= 21,      "func":()=>{p.hp -= Math.ceil(p.hp * 0.25);curse = Math.max(0,curse - 5);}},
+            {"name":`deep sight: -${20*t} hp for +2 vision`,            "cost":() => p.hp - 20 * t >= 1,           "func":()=>{p.hp -= 20 * t;fogMap.adjustRange(2);}},
+            {"name":`second wind: -1 vision for +3 sprint`,             "cost":() => fogMap.range > 1,             "func":()=>{fogMap.adjustRange(-1); p.sprint+=3;}},
+            {"name":`shopholic: -${3*t} attack for +2 rerolls`,         "cost":() => p.attack >= 3 * t,            "func":()=>{p.attack -= 3 * t;reroll_tokens += 2;}},
+            {"name":`life experience: -${30+10*p.lvl} hp for a level`,  "cost":() => p.hp - (30 + 10 * p.lvl) >= 1,"func":()=>{p.hp -= 30 + 10 * p.lvl; p.xp += p.xpForLevels(1); p.check_lvl();}},
+        ] : [
+            {"name":`blood sword: -${10*t} hp for +${2*t} attack`,      "cost":() => p.hp - 10 * t >= 1, "func":()=>{p.hp -= 10 * t; p.attack += 2 * t;}},
+            {"name":`Meditation: -${2*t} attack for +${25*t} hp`,       "cost":() => p.attack >= 2 * t,  "func":()=>{p.attack -= 2 * t; p.hp += 25 * t;}},
+            {"name":`lucky sacerfice: -${10*t} hp for +${2*t} luck`,    "cost":() => p.hp - 10 * t >= 1, "func":()=>{p.hp -= 10 * t; p.luck += 2 * t;}},
+            {"name":`pain for gain: -${15*t} hp for +${10*t} xp`,       "cost":() => p.hp - 15 * t >= 1, "func":()=>{p.hp -= 15 * t; p.xp += 10 * t; p.check_lvl();}},
+            {"name":`skill over luck: -${3*t} luck for +${10*t} xp`,    "cost":() => p.luck >= 3 * t,    "func":()=>{p.luck -= 3 * t; p.xp += 10 * t; p.check_lvl();}},
+        ];
+        const cands = pool.filter(tr => tr.cost());
+        trade_selection = cands.sort(() => 0.5 - Math.random()).slice(0, 3);
+        trade_big = big;
+        return trade_selection
     }
 }
 
@@ -1859,6 +1910,16 @@ class floorModifiers {
         notify("Floor Variant: ",this.lfm.name)
     }
 }
+
+function genDaily() {
+    const today = new Date();
+
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `DAILY: ${yyyy}-${mm}-${dd}`;
+}
+
 const fogMap = new Fog(4, fogSymbol);
 
 let t;
@@ -2021,6 +2082,28 @@ document.addEventListener("keydown", (event) => {
             mainMenu = false;
             draw();
             return;
+        } else if (key === "f") {
+            SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
+            mainMenu = false;
+            Settings = false;
+            credits  = false;
+            help     = false;
+            achivement_menu = false;
+            start_config = false;
+            leaderboard_menu = false;
+            trees = false;
+            compendiumPage = false;
+            genSeeds(genDaily());
+            Class = Classes[math.floor(seedRand("misc") * 32)]
+            reset();
+            if (Class.noCoins || Class.noPotions) {
+                for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                    if (Class.noCoins && grid[y][x] === "$") grid[y][x] = air;
+                    if (Class.noPotions && "phPH".includes(grid[y][x])) grid[y][x] = air;
+                }
+                draw();
+            }
+            return;
         }
     } else if (leaderboard_menu) {
         const pageSize = Math.max(1, Math.floor((H - 8) / 3));
@@ -2036,6 +2119,16 @@ document.addEventListener("keydown", (event) => {
             return;
         } else if (key === "ArrowRight" && leaderboardPage + 1 < pageCount) {
             leaderboardPage++;
+            draw();
+            return;
+        } else if (key === "a") {
+            leaderboardClassIndex += leaderboardClassIndex > -1 ? -1 : Classes.length;
+            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
+            draw();
+            return;
+        } else if (key === "d") {
+            leaderboardClassIndex += leaderboardClassIndex < Classes.length ? 1 : -Classes.length - 1;
+            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
             draw();
             return;
         }
