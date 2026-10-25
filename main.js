@@ -276,7 +276,7 @@ let Classes = [
     {...BASE, "name":"cyadian","GameStart":()=>{p.sprint = Math.max(W,H); p.move_speed = Math.max(W,H)},"FloorStart":()=>{p.sprint = Math.max(0, p.sprint - 1); p.attack += (p.floor % 2 == 0) ? 1 : 0}, "desc":"start with max speed, and sprint, -1 sprint each floor, and gain 1 attack every seccond floor."},
     {...BASE, "name":"gladiator","GameStart":()=>{p.hp -= 50},"OnDamage":(d)=>{p.money += Math.floor(d/2); return d;}, "desc":"start with 50 less hp, gain money when you take damgege."},
     {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"},
-    {...BASE, "name":"blind", "GameStart":()=>{fogMap.adjustRange(-4)}, "floorStart":()=>{p.attack += fogMap.range},"desc":"-4 vision, +1 attack each floor per vision.","unlocked":true},
+    {...BASE, "name":"blind", "GameStart":()=>{fogMap.adjustRange(-4)}, "FloorStart":()=>{p.attack += fogMap.range},"desc":"-4 vision, +1 attack each floor per vision.","unlocked":true},
 ]
 // 32 total classes, and more comming soon... , 
 // maybye will make classes arround some more niche stuff.
@@ -376,7 +376,7 @@ let locked_achivements = [
     {"name":"gm+3 adventurer",         "desc":"reach lvl 90+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 90);}},
     {"name":"gm+4 adventurer",         "desc":"reach lvl 100+","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (lvl >= 100);}},
     // range
-    {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"battle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
+    {"name":"basic eye's",             "desc":"have 10+ vision","unlock":"batle mage","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 10);}},
     {"name":"platnium eye",            "desc":"have 20+ vision","unlock":"blind","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 20);}},
     {"name":"third eye",               "desc":"have 25+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 25);}},
     {"name":"Glasses!",                "desc":"have 30+ vision","req":(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) => {return (range >= 30);}},
@@ -485,6 +485,7 @@ let deathCause = "";
 let reroll_tokens = 0;
 let curse = 0
 
+let move_conter = 0;
 let Volume = 10;
 let FGI = 0;
 let BGI = 0;
@@ -1213,7 +1214,7 @@ function draw() {
 
         const toasts = [];
         for (let i = 0; i < notifications.length; i++) {
-            const n = notifications[i];
+            const n = notifications[notifications.length - i - 1];
             const text = [` ${n.name}: `,...n.words];
             const tw = instructionWidth
             toasts.push("");
@@ -1305,6 +1306,7 @@ class Player {
             this.place(this.sym);
             if (goUp) s.next();
             if (!shopState && !battle && !skill_selection) enemy.spawn()
+            move_conter += 1;
         }
     }
 
@@ -1938,6 +1940,7 @@ let fm = new floorModifiers();
 let fmOn = true;
 
 function reset() {
+    move_conter = 0;
     shopState = null;
     skill_selection = null;
     reroll_tokens = 0
@@ -2074,9 +2077,11 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "9") {
-            for (let c in Classes) {
+            for (let c of Classes) {
                 c.unlocked = true;
             }
+            draw();
+            return;
         } else if (key === "c") {
             compendiumPage = true;
             mainMenu = false;
@@ -2094,7 +2099,7 @@ document.addEventListener("keydown", (event) => {
             trees = false;
             compendiumPage = false;
             genSeeds(genDaily());
-            Class = Classes[math.floor(seedRand("misc") * 32)]
+            Class = Classes[Math.floor(seedRand("misc") * 32)]
             reset();
             if (Class.noCoins || Class.noPotions) {
                 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -2362,7 +2367,7 @@ if (saved) {
 
 // trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
 let BLANK = " ".repeat(instructionWidth)
-let tmsgs = [BLANK,"use WASD to move","hold shift to sprint",BLANK,"explore to find items, and stuff.",BLANK,"Items: ","$ = money","p, h, P, H = healing",BLANK,"> is a shop and a staircase to the next floor"]
+let tmsgs = [BLANK,"use WASD to move","hold shift to sprint",BLANK,"explore to find items, and stuff.",BLANK,"Items: ","$ = money","p, h, P, H = healing",BLANK,"> is a shop and a staircase to the next floor",BLANK,"e and E are encounters which act as shops, but use stats as currency.",BLANK,"cursed items grant x2 stats, but make the game harder."]
 let TUTORIAL = true;
 if (TUTORIAL) {
     tmsgs = tmsgs.map(i => i.trim()).filter(Boolean);
