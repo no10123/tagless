@@ -323,6 +323,7 @@ let chosenItems  = [];
 
 let challengePage = false;
 let encounter = false;
+let encounterOwner = null;
 
 let locked_achivements = [
     // floor based
@@ -718,7 +719,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     }
 
     fogMap.reset();
-    t.NewFloor();
+    if (t) t.NewFloor();
     if (!Class.noPotions) {
         PS.spawn(); 
         PM.spawn(); 
@@ -1194,19 +1195,21 @@ function draw() {
             `ENCOUNTER`,
             `Gold: ${p.money}$, hp: ${p.hp}`,
             "",
-            ...encounter.map(i => i.name),
+            ...(encounter.length ? encounter.map((offer,i) => `${i + 1}. ${offer.name}`) : ["nothing..."]),
             "",
             (reroll_tokens > 0) ? `[R] Refresh encounter (reroll tokens: ${reroll_tokens})` : "",
             "",
             "ESC. leave encounter"
         ];
         let display = "\n  " + " ".repeat(W);
-        for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
+        const vLines = [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0,H);
+        for (let i = 0; i < vLines.length; i++) {
+            const line = vLines[i];
             const instruction = i < column.length ? column[i] : " ";
             const text = line.slice(0, W);
             const left = Math.floor((W - text.length) / 2);
             display += "\n    " + " ".repeat(left) + text.padEnd(W - left) + instruction;
-        }
+        };
         body.innerText = display;
     } else {
         let display = "\n  " + " ".repeat(W);
@@ -1304,8 +1307,11 @@ class Player {
             this.x = nextX;
             this.y = nextY;
             this.place(this.sym);
-            if (goUp) s.next();
-            if (!shopState && !battle && !skill_selection) enemy.spawn()
+            if (goUp) {
+                s.next();
+                return;
+            }
+            if (!shopState && !battle && !skill_selection && !encounter) enemy.spawn()
             move_conter += 1;
         }
     }
@@ -1376,19 +1382,41 @@ class Player {
 }
 
 class Money {
-    constructor(sym) {
-        this.l = Math.max(1, Math.round((Math.floor(seedRand("map") * 10) + 1) * Math.sqrt(W * H / 2856)));
+    constructor(sym, s = true) {
+        this.l = 0;
         this.x = [];
         this.y = [];
         this.sym = sym;
-        this.mult = 1
+        this.mult = 1;
         
+        if (s) this.spawn();
+    }
+
+    spawn() {
+        this.l = Math.max(1, Math.round((Math.floor(seedRand("map") * 10) + 1) * Math.sqrt(W * H / 2856)));
+        this.x = [];
+        this.y = [];
         for (let i = 0; i < this.l; i++) {
             let {x,y} = getEmptyTile();
             this.x.push(x);
             this.y.push(y);
         }
         this.place();
+    }
+
+    clear() {
+        for (let i = 0; i < this.x.length; i++) {
+            const x = this.x[i];
+            const y = this.y[i];
+
+            if (grid[y] && grid[y][x] === this.sym) {
+                grid[y][x] = air;
+            };
+
+            this.l = 0
+            this.x = []
+            this.y = []
+        }
     }
     
     place() {
@@ -1408,7 +1436,10 @@ class stairs {
     }
     next () {
         p.floor++;
-        best_floor = Math.max(best_floor, p.floor)
+        best_floor = Math.max(best_floor, p.floor);
+        encounter = false;
+        encounterOwner = null;
+
         newFloor({
                 openRatio: 0.34 + seedRand("map") * 0.16,
             pillars: randomInt([
@@ -1417,11 +1448,19 @@ class stairs {
             ]),
             brush: seedRand("map") < 0.8 ? 1 : 2
         });
-        if (!Class.noCoins) new Money(m.sym);
+        
         p.place("@");
         this.place();
-        if (!Class.noShop && !Class.goldToXp) shopState = shop.open(p.floor);
-        if (fmOn && p) fm.newFloor();
+
+        if (!m) {
+            m = new Money(m.sym);
+        } else if (Class.noCoins) {
+            m.clear();
+        } else {
+            m.spawn()
+        }
+        shopState = (!Class.noShop && !Class.goldToXp) ? shop.open(p.floor) : null;
+        if (fmOn) fm.newFloor();
         Class.FloorStart();
         updateStats();
         draw();
@@ -1862,9 +1901,13 @@ class encounters {
         grid[y][x] = this.sym;
     }
     trigger() {
+        if (encounter) return;
+
+        encounterOwner = this;
         encounter = this.openTrades(big);
     }
-    openTrades(big) {
+    openTrades() {
+        const big = this.big;
         const t = 1 + Math.floor(p.floor / 10);
         const pool = big ? [
             {"name":`sparring: -${50*t} hp for +${8*t} attack`,         "cost":() => p.hp - 50 * t >= 1,           "func":()=>{p.hp -= 50 * t; p.attack += 8 * t;}},
@@ -1881,9 +1924,11 @@ class encounters {
             {"name":`skill over luck: -${3*t} luck for +${10*t} xp`,    "cost":() => p.luck >= 3 * t,    "func":()=>{p.luck -= 3 * t; p.xp += 10 * t; p.check_lvl();}},
         ];
         const cands = pool.filter(tr => tr.cost());
-        trade_selection = cands.sort(() => 0.5 - Math.random()).slice(0, 3);
-        trade_big = big;
-        return trade_selection
+        for (let i = cands.length - 1; i > 0; i--) {
+            const j = Math.floor(seedRand("misc") * (i + 1));
+            [cands[i], cands[j]] = [cands[j], cands[i]];
+        };
+        return cands.slice(0,3);
     }
 }
 
@@ -1902,7 +1947,11 @@ class floorModifiers {
             {"name":"lucky",     "onEnter":()=>{p.luck += 5},"onExit":()=>{p.luck -= 5},"wight":100},
             {"name":"unlucky",   "onEnter":()=>{p.luck -= 5},"onExit":()=>{p.luck += 5},"wight":100},
         ]
-        this.lfm = {"name":"NA","onEnter":()=>{},"onExit":()=>{},"wight":100}
+        this.none = {"name":"NA","onEnter":()=>{},"onExit":()=>{},"wight":100};
+        this.lfm = this.none;
+    }
+    reset() {
+        this.lfm = this.none
     }
     newFloor () {
         this.lfm.onExit();
@@ -1955,6 +2004,7 @@ function reset() {
     fogMap.range = 4;
     t = new timer();
     p = null;
+    fm.reset();
     newFloor({
         openRatio: 0.34 + seedRand("map") * 0.16,
         pillars: randomInt([
@@ -1965,12 +2015,12 @@ function reset() {
     });
     shop = new Shop();
     p = new Player(Math.floor(W / 2), Math.floor(H / 2), "@");
-    m = new Money("$");
     s = new stairs(">");
     s.place();
+    m = new Money("$", !Class.noCoins);
     enemy = new Enemy();
-    enemy.spawn();
     Class.GameStart();
+    enemy.spawn();
     updateStats();
     draw();
 }
@@ -2099,7 +2149,7 @@ document.addEventListener("keydown", (event) => {
             trees = false;
             compendiumPage = false;
             genSeeds(genDaily());
-            Class = Classes[Math.floor(seedRand("misc") * 32)]
+            Class = Classes[Math.floor(seedRand("misc") * Classes.length)]
             reset();
             if (Class.noCoins || Class.noPotions) {
                 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -2299,7 +2349,32 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         }
-    }
+    } else if (encounter) {
+        if (key === "Escape") {
+            encounter = false;
+            encounterOwner = null;
+            draw();
+            return;
+        };
+        if ((key === "r" || key === "R") && reroll_tokens > 0) {
+            reroll_tokens--;
+            encounter = encounterOwner ? encounterOwner.openTrades() : [];
+            updateStats();
+            draw();
+            return;
+        };
+        const choice = Number(key) - 1;
+        if (Number.isInteger(choice) && choice >= 0 && choice < encounter.length) {
+            const trade = encounter[choice];
+            if (trade.cost()) {
+                trade.func();
+                encounter = false;
+                encounterOwner = null;
+                updateStats();
+                draw();
+            };
+        };
+    };
 
     if (key === "m" || key === "M") {
         music.toggleMusicMute();
