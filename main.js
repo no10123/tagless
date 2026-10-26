@@ -720,6 +720,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
 
     fogMap.reset();
     if (t) t.NewFloor();
+    if (p) p.place("@");
     if (!Class.noPotions) {
         PS.spawn(); 
         PM.spawn(); 
@@ -1001,7 +1002,7 @@ function draw() {
             `floor: ${p.floor}`,
             `lvl: ${p.lvl}, xp: ${p.xp}`,
             `attack: ${p.attack}, hp: ${p.hp}`,
-            `luck: ${p.luck}, vision: ${p.vision}`,
+            `luck: ${p.luck}, vision: ${fogMap.range}`,
             `disscounts: -${shop.discount}$, -${shop.percent_discount}%`,
             `reroll tokens: ${reroll_tokens}, curse: ${curse}`,
             `size: ${W} x ${H}`,
@@ -1904,7 +1905,8 @@ class encounters {
         if (encounter) return;
 
         encounterOwner = this;
-        encounter = this.openTrades(big);
+        encounter = this.openTrades();
+        draw();
     }
     openTrades() {
         const big = this.big;
@@ -2374,6 +2376,7 @@ document.addEventListener("keydown", (event) => {
                 draw();
             };
         };
+        return;
     };
 
     if (key === "m" || key === "M") {
