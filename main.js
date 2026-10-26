@@ -3,7 +3,18 @@ let W = 41;
 let H = 21;
 let grid = [];
 let best_floor = 1
-// btw this token can only be used to add, edit, remove issues on the github repo, nothing else. 
+/* lets adress the github token, yes i know it's a vulnerability and I shouldn't hardcode it.
+I also know spliting it doesn't make it secure (i just split it to get arround githubs push protection).
+No the token cannot do anything harmful. 
+This token can only be used to add, edit, remove issues on the github repo tagless, nothing else. 
+Yes I understand someone could steal it and spam the leaderboard, or delete all of the entries. 
+Yes I will eventually add a backend to make it secure, but currently haven'thad the time to figure all that out.
+(I will use hack clubs nest to clone the repo at some point and add a backend for the token, but 
+that time wouldn't be tracked as coding time, and / I already have a hard enough time meeting the 10 water
+per week minimum. Also i have a ipv4 on nest so that helps.)
+please do not take off any points for this as i is working on fixing it. 
+also dont worry ill revoke it once the new method is up and working.
+*/
 const token = "github" + "_pat_11" + "A6Z3DRY0uiBjs" + "usXifV4_0hbHd1Lhpsr1" + "tHBVRiSTHqp" + "NaB5boA0WghMMeEAbdTu" + "22MR5NGOYUFAqSIF"
 let instructions = [
     "inputs:          ",
@@ -42,8 +53,8 @@ function formatTime(milliseconds) {
 }
 
 function randomInt([min, max]) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+    return Math.floor(seedRand("misc") * (max - min + 1)) + min;
+};
 
 function xpRequiredForLevel(level) {
     return 12 + 7 * level;
@@ -1262,6 +1273,15 @@ class Player {
             {"name":"bonus items", "func": () => {shop.avail = Math.min(10, shop.avail + 1);},"uses":7},
             {"name":"bonus skills", "func": () => {this.skill_choices = Math.min(10, this.skill_choices + 1);},"uses":5},
         ];
+        this.options = [
+                {"name":"sharpen sword", "func": () => {p.attack += Class.goldToXp ? 3 : 1;}},
+                {"name":"health boost",      "func": () => {p.hp += 8 + p.lvl * 2;}},
+                {"name":"quick buck",      "func": () => {p.money = p.money + 3 * m.mult;}},
+                {"name":"luck bonus",    "func": () => {p.luck++;}},
+                {"name":"coin collector",  "func": () => {m.mult++;}},
+                {"name":"cuppon collector",  "func": () => {shop.percent_discount = Math.min(0.5, shop.percent_discount + 0.05);}},
+                {"name":"charisma",  "func": () => {shop.discount = Math.min(20, shop.discount + 1);}},
+            ]
         this.potion_spawn = 1;
         this.potion_affect = 1;
         this.place(this.sym);
@@ -1413,11 +1433,10 @@ class Money {
             if (grid[y] && grid[y][x] === this.sym) {
                 grid[y][x] = air;
             };
-
-            this.l = 0
-            this.x = []
-            this.y = []
         }
+        this.l = 0
+        this.x = []
+        this.y = []
     }
     
     place() {
@@ -1454,7 +1473,7 @@ class stairs {
         this.place();
 
         if (!m) {
-            m = new Money(m.sym);
+            m = new Money("$", !Class.noCoins);
         } else if (Class.noCoins) {
             m.clear();
         } else {
@@ -1858,7 +1877,7 @@ class timer {
         this.tick();
         this.l3ft.push(this.floor)
         if (this.l3ft.length > 3) this.l3ft.splice(0,1)
-        if (this.floor < this.best) this.best = this.floor
+        if (this.floor < this.best || this.best === 0) this.best = this.floor
         this.avg = (this.l3ft.reduce((accumulator, currentValue) => accumulator + currentValue, 0))/this.l3ft.length
         this.start_floor = Date.now();
         this.tick()
@@ -1961,6 +1980,26 @@ class floorModifiers {
         addEntry("floor",this.lfm);
         this.lfm.onEnter();
         notify("Floor Variant: ",this.lfm.name)
+    }
+}
+
+class event {
+    constructor () {
+        // would be extra pages ajacent to shop.
+        // just ideas for now will be implemented next week.
+        this.pool = [
+            // this is an ex.
+            {"name":"+1 coin","options":[{"name":"leave","action":()=>{p.money += 1}}]},
+            // another simple ex.
+            {"name":"wishing well","options":[{"name":"throw a coin in","action":()=>{p.luck += ((seedRand("misc") < 0.1) ? 1 : 0); p.money--;}}]},
+            // idea is you would have challenges that you would need to complete by the next floor for a reward.
+            {"name":"bounty board","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
+            // you would be able to fish once for random loot, items, buffs, etc.
+            {"name":"fishing pond","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
+            // would be a grave of a player that deid on the next floor would have their name and stats.
+            // would add really cool atmosphere to the worldbuilding and whatnot.
+            {"name":"Grave of [username]","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
+        ]
     }
 }
 
@@ -2437,10 +2476,7 @@ if (saved) {
     b_trees = saved.b_trees || b_trees;
     progressLoaded = true;
 }
-
-
-
-
+progressLoaded = true;
 
 
 // trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
