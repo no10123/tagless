@@ -519,8 +519,7 @@ async function loadLeaderboard(ccc=null) {
     leaderboardLoaded = false;
     leaderboardPage = 0;
     try {
-        const response = await fetch("/api/leaderboard");
-        //const response = await fetch("https://api.github.com/repos/no10123/tagless/issues?labels=score&state=all&per_page=100");
+        const response = await fetch("https://api.github.com/repos/no10123/tagless/issues?labels=score&state=all&per_page=100");
         if (!response.ok) {
             throw new Error(`Github Error: ${response.status} ${response.statusText}`);
         }
@@ -2096,13 +2095,16 @@ document.addEventListener("keydown", (event) => {
             const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
             const name = (prompt("name for leaderboard:", localStorage.getItem("tagless_name") || "") || "anonymous").trim().slice(0, 12);
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
-            fetch("/api/leaderboard", {
+            fetch("https://api.github.com/repos/no10123/tagless/issues", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: {"Authorization": "token " + token, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
-                    score, floor: p.floor, lvl: p.lvl, money: p.money, cls: Class.name, time: t.run
+                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
+                    labels: ["score"],
+                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run})
                 })
             }).then(r => { gameMessage = r.ok ? "score sent!" : "score failed (" + r.status + ")"; draw(); });
+
             return;
         }
         updateB();
