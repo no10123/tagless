@@ -1,6 +1,10 @@
 const body = document.getElementById("body") || document.body; // added fallback
 const canvas = document.getElementById("canvas") || document.canvas;
 const ctx = canvas.getContext("2d");
+ctx.font = "bold 16px Liberation Mono";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillStyle = "#cdd6f4";
 let W = 41;
 let H = 21;
 let grid = [];
@@ -43,7 +47,6 @@ let instructions = [
     "% discount: -0%   ",
     "curse:      0     ",
     "best floor: 1     ",
-    
 ]
 const instructionWidth = 20;
 
@@ -97,24 +100,24 @@ function genlist(stringSeed, count) {
     return list;
 }
 
-let SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
-let s_pos = {"shop":0,"lvl":0,"map":0,"misc":0}
+let RNGS = {};
+
 function genSeeds(seed) {
-    s_pos = {shop:0, lvl:0, map:0, misc:0};
-    SEEDS.shop = genlist("SHOP: " + seed,1000);
-    SEEDS.lvl  = genlist("LVL:  " + seed,1000);
-    SEEDS.map  = genlist("MAP:  " + seed,1000);
-    SEEDS.misc = genlist("MISC: " + seed,1000);
+    RNGS = {
+        shop: mulberry32(cyrb128("SHOP: " + seed)[0]),
+        lvl:  mulberry32(cyrb128("LVL:  " + seed)[0]),
+        map:  mulberry32(cyrb128("MAP:  " + seed)[0]),
+        misc: mulberry32(cyrb128("MISC: " + seed)[0])
+    };
 }
 
 function seedRand(place) {
-    const pool = SEEDS[place];
-    if (Array.isArray(pool) && pool.length > 0) {
-        s_pos[place] = (s_pos[place] || 0) + 1;
-        return pool[s_pos[place] % pool.length];
+    const rng = RNGS[place];
+    if (typeof rng === "function") {
+        return rng();
     }
     return Math.random();
-}
+};
 
 // compendium
 let compendiumPage = false;
@@ -613,6 +616,15 @@ function copyRunSummary() {
         });
 }
 
+function cDraw() {
+    return;
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[0].length; j++) {
+            ctx.fillText(grid[i][j], 10 * j, 10 * i);
+        }
+    }
+}
+
 function draw() {
     fogMap.reveal(p.x, p.y);
     updateStats()
@@ -1092,7 +1104,8 @@ function draw() {
             display += "\n    " + row + "  " + instruction;
         }
         body.innerText = display;
-    }
+    };
+    cDraw();
 }
 
 class Player {
