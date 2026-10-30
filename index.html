@@ -14,11 +14,30 @@
 			line-height: 1;
 			white-space: pre;
     	}
+		body {
+			display: flex;
+			align-items: flex-start;
+			gap: 20px;
+			white-space: normal;
+		}
+
+		#canvas {
+			display: block;
+			image-rendering: pixelated;
+			flex-shrink: 0;
+		}
+
+		#txt {
+			white-space: pre;
+			margin: 0;
+			line-height: 1;
+		}
   	</style>
   	<title>text rpg</title>
 </head>
 <body id="body">
 	<canvas id="canvas"></canvas>
+	<p id="txt"></p>
 	<script src="DATA.js"></script>
 	<script src="main.js"></script>
 	<script src="inputs.js"></script>

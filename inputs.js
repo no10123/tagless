@@ -222,6 +222,24 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "7") {
+            renderMode = renderMode === "ascii" ? "art" : "ascii"; 
+            localStorage.setItem("tagless_render_mode", renderMode); 
+            updateWH();  
+            if (p) { 
+                newFloor({ 
+                    openRatio: 0.34 + seedRand("map") * 0.16, 
+                    pillars: randomInt([ Math.max(4, Math.floor(W * H * 0.006)), Math.max(8, Math.floor(W * H * 0.018)) ]), 
+                    brush: seedRand("map") < 0.8 ? 1 : 2, countAsFloor: false 
+                }); 
+                if (s) s.place(); 
+                if (m) { 
+                    if (Class.noCoins) m.clear(); 
+                    else m.spawn(); 
+                } 
+                enemy = new Enemy(); 
+            } 
+            draw();
+        } else if (key === "8") {
             mainMenu = true;
             Settings = false;
             draw();

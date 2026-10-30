@@ -139,6 +139,14 @@ class DATA {
             // could  also unlock achivements, (maybye stat value or other rewards but the machine would have to have
             // a running total and a total for the current run)
             {"name":"donation machine","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
+            // a elder or someone who gives cryptic lore filled msgs.
+            {"name":"lore giver","options":[{"name":"placeholder (does nothing)","action":()=>{}}]}, 
+            // requires 1000hp  open opening the door reveals the outside world unlike anything you rembered.
+            // it's a bleack world with no life, the cycle must continue within the tower, you feel a force pushing you back in
+            // as the door reclosses, their is no escape their is no end to the tower. 
+            {"name":"Door of blood","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},  
+            // gives you the next floor modifier and allows you to regen it.
+            {"name":"bell keeper","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},  
         ]
         this.locked_achivements = [
             // floor based
@@ -250,13 +258,13 @@ class DATA {
             {...BASE, "name":"Dude", "unlocked":true, "desc":"no buff"},
             {...BASE, "name":"healer", "unlocked":true, "FloorStart":()=>{p.hp += 15;}, "desc":"+15 hp per floor"},
             {...BASE, "name":"theif", "unlocked":true, "winBatle":()=>{p.money += 2;}, "coinPickup":()=>{p.money += 2;}, "desc":"+2 gold to all incomes"},
-            {...BASE, "name":"fighter", "unlocked":true, "GameStart":()=>{p.attack_mult = 1.25;}, "desc":"x1.25 damage"},
+            {...BASE, "name":"fighter", "unlocked":true, "GameStart":()=>{p.attack_mult += 0.25;}, "desc":"x1.25 damage"},
             {...BASE, "name":"cat", "LevelUp":()=>{p.luck += 2;}, "desc":"+2 luck per level"},
             {...BASE, "name":"gambler", "OnAttack":(d)=>{const r=seedRand("misc"); return r<0.35 ? d*2 : r<0.85 ? d : 0;}, "desc":"35% 2x dmg, 50% x1, 15% x0"},
             {...BASE, "name":"apprentice", "GameStart":()=>{skill_selection = p.rollSkillSelection();}, "desc":"start with skill of choice (will be tripled)"},
-            {...BASE, "name":"alchemist", "GameStart":()=>{p.potion_affect = 1.5;}, "desc":"x1.5 potion effect"},
+            {...BASE, "name":"alchemist", "GameStart":()=>{p.potion_affect += 0.5;}, "desc":"x1.5 potion effect"},
             {...BASE, "name":"forgotten", "noShop":true, "noCoins":true, "noPotions":true, "extraTriggers":5,
-                "GameStart":()=>{p.attack_mult = 2;}, "desc":"+5 extra skill triggers and x2 dmg, no shop, no coins, no potions"},
+                "GameStart":()=>{p.attack_mult += 1;}, "desc":"+5 extra skill triggers and x2 dmg, no shop, no coins, no potions"},
             {...BASE, "name":"imortal", "OnDamage":(d)=>Math.max(0, d - p.floor), "desc":"blocks damage equal to the floor number"},
             {...BASE, "name":"merchant", "OnAttack":(d)=>d * (1 + Math.sqrt(p.money) / 10), "desc":"deal more damage with more money"},
             {...BASE, "name":"executor", "BattleStart":()=>{
@@ -297,7 +305,7 @@ class DATA {
             {...BASE, "name":"cyadian","GameStart":()=>{p.sprint = Math.max(W,H); p.move_speed = Math.max(W,H)},"FloorStart":()=>{p.sprint = Math.max(0, p.sprint - 1); p.attack += (p.floor % 2 == 0) ? 1 : 0}, "desc":"start with max speed, and sprint, -1 sprint each floor, and gain 1 attack every seccond floor."},
             {...BASE, "name":"gladiator","GameStart":()=>{p.hp -= 50},"OnDamage":(d)=>{p.money += Math.floor(d/2); return d;}, "desc":"start with 50 less hp, gain money when you take damgege."},
             {...BASE, "name":"mimic", "mimicChance":0.15,"winBatle":()=>{ if (battle && battle.mimic) p.money += Math.ceil((m.mult + 0.1) * Math.sqrt(p.floor)) * 2; },"desc":"15% of coins are mimics, x2 coins from mimics"},
-            {...BASE, "name":"blind", "GameStart":()=>{fogMap.adjustRange(-4)}, "FloorStart":()=>{p.attack += fogMap.range},"desc":"-4 vision, +1 attack each floor per vision.","unlocked":true},
+            {...BASE, "name":"blind", "GameStart":()=>{fogMap.adjustRange(-4)}, "FloorStart":()=>{p.attack += fogMap.range},"desc":"-4 vision, +1 attack each floor per vision.","unlocked":false},
         ]
         this.skillOptions = [
             {"name":"sharpen sword", "func": () => {p.attack += Class.goldToXp ? 3 : 1;}},

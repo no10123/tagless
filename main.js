@@ -1,14 +1,69 @@
-const body = document.getElementById("body") || document.body; // added fallback
-const canvas = document.getElementById("canvas") || document.canvas;
+const body = document.getElementById("txt") || document.body; // added fallback
+const canvas = document.getElementById("canvas");
+if (!canvas) {throw new Error("NO CANVAS");}
 const ctx = canvas.getContext("2d");
 ctx.font = "bold 16px Liberation Mono";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 ctx.fillStyle = "#cdd6f4";
+const TILE_SIZE = 16;
+const SPRITE_SIZE = 16;
 let W = 41;
 let H = 21;
 let grid = [];
 let best_floor = 1
+const spriteSheet = new Image();
+let spriteSheetReady = false;
+
+spriteSheet.onload = () => {
+    spriteSheetReady = true;
+    draw();
+};
+
+spriteSheet.onerror = () => {console.error("img thingy failed to load.");};
+
+spriteSheet.src = "art/chareters.png";
+function drawSprite(index, x, y) {
+    if (!spriteSheetReady) return;
+
+    const sx = (index % 16) * SPRITE_SIZE;
+    const sy = Math.floor(index / 16) * SPRITE_SIZE;
+
+    ctx.drawImage(
+        spriteSheet,
+        sx, sy, SPRITE_SIZE, SPRITE_SIZE,
+        x * TILE_SIZE, y * TILE_SIZE,
+        TILE_SIZE, TILE_SIZE
+    );
+}
+
+let renderMode = localStorage.getItem("tagless_render_mode") === "art" ? "art" : "ascii";
+
+function updateWH() {
+    const style = getComputedStyle(document.body);
+    const fontSize = parseFloat(style.fontSize) || 16;
+    const lineHeight = style.lineHeight === "normal" ? fontSize * 1.2 : parseFloat(style.lineHeight);
+
+    const charWidth = fontSize * 0.6;
+    const screenW = document.documentElement.clientWidth;
+    const screenH = document.documentElement.clientHeight;
+
+    if (renderMode === "art") {
+        const panelWidth = instructionWidth * charWidth;
+        const gap = 20;
+        const padding = 32;
+
+        W = Math.max(12,Math.floor((screenW - panelWidth - gap - padding) / TILE_SIZE));
+        H = Math.max(instructions.length, Math.floor((screenH - padding) / TILE_SIZE) - 1);
+    } else {
+        const columns = Math.floor(screenW / charWidth);
+        const rows = Math.floor(screenH / lineHeight);
+
+        W = Math.max(12, columns - instructionWidth - 20);
+        H = Math.max(instructions.length, rows - 5);
+    }
+}
+
 /* lets adress the github token, yes i know it's a vulnerability and I shouldn't hardcode it.
 I also know spliting it doesn't make it secure (i just split it to get arround githubs push protection).
 No the token cannot do anything harmful. 
@@ -49,6 +104,71 @@ let instructions = [
     "best floor: 1     ",
 ]
 const instructionWidth = 20;
+updateWH();
+canvas.width = W * TILE_SIZE;
+canvas.height = (H + 1) * TILE_SIZE;
+
+let bmsg = "01001101 01000100 01000101 01110111 01001101 01010100 01000101 01110111 01001101 01010100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000101 01110111 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01110111 01001101 01010100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01110111 01001101 01010100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01111000 01001101 01000100 01000001 01100111 01001101 01000100 01000001 01111000 01001101 01000100 01000001 01110111 01001101 01000100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01110111 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01110111 01001101 01010100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01111000 01001101 01000100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01110111 01001101 01010100 01000001 01100111 01001101 01000100 01000001 01111000 01001101 01000100 01000001 01110111 01001101 01000100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01010100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01010100 01000101 01100111 01001101 01000100 01000001 01111000 01001101 01000100 01000001 01110111 01001101 01000100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000101 01110111 01001101 01000100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01111000 01001101 01010100 01000001 01110111 01001101 01010100 01000001 01100111 01001101 01000100 01000101 01111000 01001101 01000100 01000001 01111000 01001101 01000100 01000101 01100111 01001101 01000100 01000101 01110111 01001101 01010100 01000101 01111000 01001101 01000100 01000101 00111101".split(" ");
+let TIPS = [""]
+let TIP = ""
+function genTIP() {
+    u = Classes.filter(i => i.unlocked)
+    TIPS = [
+        "Are you winning?",
+        "Just one more hour",
+        "there are many easter eggs.",
+        `there are ${data.Classes.length} Classes!`,
+        `Mix it up and play with ${u[Math.floor(Math.random() * u.length)].name}`,
+        "IDK",
+        "Try winning",
+        "100% is just the beginning",
+        "spelling  errors are part of the lore.",
+        "ruining `:(){ :|:& };:` gives you infinite hp.",
+        "this project is mainly JS",
+        "-....--",
+        "Will I get a Blahaj or two? hmm....",
+        "some Classes are more equal than others.",
+        "[insert useful information here]",
+        "it's just a simple text game",
+        "luck is kinda good in this game",
+        "what's your highest floor? The dev got to 24.",
+        "TERA is peak.",
+        "SU0gQSBERVY=",
+        "this is a super duper extra very stretched out longer than it needs to be message.",
+        "did you know the game has lore",
+        "most of these messages aren't that helpful",
+        `there are ${data.varriants.length} many variants`,
+        `there are ${data.shopPool.length} many items`,
+        `there are more than 2 * 10^{18} many variant combinations`,
+        `Random number: ${Math.round(Math.random() * 1000000000000)}`,
+        "there are over 2k lines of code",
+        "POOBERT IS KING!",
+        "Go Gamble",
+        "there are 3 starting classes.",
+        "you should explore some while playing",
+        `only ${100 - percentComplete | 100}% left.`,
+        "balancing makes a game less fun and this game is fun.",
+        "have you found the basement",
+        "what lays outside the building?",
+        "flee when you can't survive",
+        `monster of the day: ${data.monsters[Math.floor(Math.random() * data.monsters.length)].name}"`,
+        "the lowest score you can get it 1250",
+        "the game is always watching",
+        "some things lurk in the fog",
+        `there are ${TIPS.length} tips`,
+        `diagonals are faster.`,
+        "there are a couple of achievements.",
+        "speed is the leaderboard tiebreaker",
+        "I like food",
+        "drink some coffe",
+        ":) ",
+        "o__o",
+        " :D",
+        "encounters should be used with plenty of hp to spare",
+        "potions get better in this order, p, h, P, H",
+    ]
+    TIP = TIPS[Math.floor(Math.random() * TIPS.length)];
+}
 
 function formatTime(milliseconds) {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -201,18 +321,6 @@ let konami_i = 0;
 
 const air = " ";
 const wall = "#";
-
-const style = getComputedStyle(document.body);
-const fontSize = parseFloat(style.fontSize);
-const lineHeight = style.lineHeight === "normal" ? fontSize * 1.2 : parseFloat(style.lineHeight);
-
-const charWidth = fontSize * 0.6;
-const columns = Math.floor(document.documentElement.clientWidth / charWidth);
-const rows = Math.floor(document.documentElement.clientHeight / lineHeight);
-
-console.log({ columns, rows });
-W = Math.max(12, columns - instructionWidth - 20);
-H = Math.max(instructions.length, rows - 5);
 
 const fogSymbol = "?";
 let fogOn = true;
@@ -509,7 +617,7 @@ function getEmptyTile() {
     return {x, y};
 }
 
-function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 } = {}) {
+function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1, countAsFloor=true } = {}) {
     grid = [];
     for (let y = 0; y < H; y++) {grid.push(new Array(W).fill(wall));}
 
@@ -578,7 +686,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     }
 
     fogMap.reset();
-    if (t) t.NewFloor();
+    if (countAsFloor && t) t.NewFloor();
     if (p) p.place("@");
     if (!Class.noPotions) {
         PS.spawn(); 
@@ -588,7 +696,7 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1 }
     }
     if (e) e.spawn();
     if (E) E.spawn();
-    if (p && difficulty == 0) p.hp = p.hp + 10;
+    if (countAsFloor && p && difficulty == 0) p.hp = p.hp + 10;
 }
 
 function copyRunSummary() {
@@ -617,13 +725,57 @@ function copyRunSummary() {
 }
 
 function cDraw() {
-    return;
-    for (let i = 0; i < grid.length; i++) {
-        for (let j = 0; j < grid[0].length; j++) {
-            ctx.fillText(grid[i][j], 10 * j, 10 * i);
+    const showMap = !mainMenu && !shopState && !battle && !skill_selection && !Settings
+        && !credits && !help && !achivement_menu && !Death && !start_config
+        && !leaderboard_menu && !trees && !compendiumPage && !encounter
+        && renderMode === "art";
+
+    canvas.style.display = showMap ? "block" : "none";
+
+    if (!showMap) return;
+
+    const width = W * TILE_SIZE;
+    const height = (H + 1) * TILE_SIZE;
+
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.fillStyle = "#1e1e2e";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "red";
+    ctx.fillRect(0, 0, 32, 32);
+
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            const hidden = fogOn && !fogMap.isExplored(x, y);
+            const tile = hidden ? fogMap.sym : grid[y][x];
+            if (tile === " ") continue;
+            const drawY = y + 1;
+
+            if (tile === "@") {
+                const sprite = Classes.indexOf(Class);
+                drawSprite(sprite >= 0 ? sprite : 0, x, drawY);
+                continue;
+            }
+
+            const px = x * TILE_SIZE + TILE_SIZE / 2;
+            const py = drawY * TILE_SIZE + TILE_SIZE / 2;
+
+            ctx.font = "bold 14px Consolas, monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = hidden ? "#45475a" : "#cdd6f4";
+
+            ctx.fillText(tile, px, py);
         }
     }
 }
+
 
 function draw() {
     fogMap.reveal(p.x, p.y);
@@ -635,6 +787,7 @@ function draw() {
         help     = false;
         achivement_menu = false; 
         start_config = false; 
+        genTIP();
         const lines = [
             border,
             "WELCOME TO THE DUNGEON",
@@ -654,6 +807,8 @@ function draw() {
             "",
             `best score: ${localStorage.getItem("tagless_best") || 0}`,
             `percent complete: ${percentComplete}%`,
+            "",
+            `Tip: ${TIP}`,
             "",
             border
         ];
@@ -753,7 +908,8 @@ function draw() {
             `4. BG color: ${BGL[BGI]}`,
             `5. Music: ${music.Muted ? "muted" : "on"}`,
             "6. Next track",
-            "7. back to main menu",
+            `7. Map rendering: ${renderMode === "art" ? "Image art" : "ASCII art"}`,
+            "8. back to main menu",
             "",
             border
         ];
@@ -1097,14 +1253,18 @@ function draw() {
             toasts.push("└" + "─".repeat(tw) + "┘");
         }
         const column = [...panel,"","NOTIFICATIONS: ", ...toasts];
-
-        for (let i = 0; i < grid.length; i++) {
-            const instruction = i < column.length ? column[i] : " ";
-            const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
-            display += "\n    " + row + "  " + instruction;
+        if (renderMode === "art") {
+            body.innerText = column.join("\n");
+        } else {
+            let display = "\n  " + " ".repeat(W);
+            for (let i = 0; i < grid.length; i++) {
+                const instruction = i < column.length ? column[i] : " ";
+                const row = grid[i].map((tile, x) => fogOn && !fogMap.isExplored(x, i) ? fogMap.sym : tile).join("");
+                display += "\n    " + row + "  " + instruction;
+            }
+            body.innerText = display;
         }
-        body.innerText = display;
-    };
+    }
     cDraw();
 }
 
@@ -1123,6 +1283,8 @@ class Player {
         this.luck   = 0
         this.lvl    = 0
         this.xp     = 0
+        this.critChance = 1 // lower is easier.
+        this.critMult = 0.5 // is added to defualt 1 for hit, so percent increase essetially.
         // special stats
         this.move_speed = 1;
         this.sprint = 2;
@@ -1454,7 +1616,6 @@ class Enemy {
         this.setStats(sv);
         this.startBattle();
     }
-
     setStats(sv=Math.min(Math.floor(p.floor / 20), this.varriants.length)) {
         this.monster = this.monsters[this.id];
 
@@ -1518,10 +1679,11 @@ class Enemy {
     }
     playerAttack() {
         if (!battle) return;
-        let hit = Math.ceil(seedRand("misc") * 100) + p.luck;
+        let power = Math.ceil(seedRand("misc") * 100)
+        let hit = power + p.luck;
         let damage;
         if (hit > battle.enemy.ac) {
-            damage = Math.max(0, Math.round(Class.OnAttack(p.attack * p.attack_mult)));
+            damage = Math.max(0, Math.round(Class.OnAttack(p.attack * p.attack_mult * (hit > p.critChance * 100 ? p.critMult : 1))));
         } else {
             damage = 0;
         }
@@ -1529,8 +1691,9 @@ class Enemy {
         if (battle.enemy.hp === 0) {
             winBattle();
             return;
-        }
+        }   
         this.enemyTurn(`Hit ${damage}.`);
+        
     }
     flee() {
         if (!battle) return;
@@ -1718,23 +1881,10 @@ class event {
     constructor () {
         // would be extra pages ajacent to shop.
         // just ideas for now will be implemented next week.
-        this.pool = [
-            // this is an ex.
-            {"name":"+1 coin","options":[{"name":"leave","action":()=>{p.money += 1}}]},
-            // another simple ex.
-            {"name":"wishing well","options":[{"name":"throw a coin in","action":()=>{p.luck += ((seedRand("misc") < 0.1) ? 1 : 0); p.money--;}}]},
-            // idea is you would have challenges that you would need to complete by the next floor for a reward.
-            {"name":"bounty board","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
-            // you would be able to fish once for random loot, items, buffs, etc.
-            {"name":"fishing pond","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
-            // would be a grave of a player that deid on the next floor would have their name and stats.
-            // would add really cool atmosphere to the worldbuilding and whatnot.
-            {"name":"Grave of [username]","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
-            // donation machine - the one from binding of isac, would go outside of rounds and could unlock classes.
-            // could  also unlock achivements, (maybye stat value or other rewards but the machine would have to have
-            // a running total and a total for the current run)
-            {"name":"donation machine","options":[{"name":"placeholder (does nothing)","action":()=>{}}]},
-        ]
+        this.pool = data.eventPool;
+    }
+    open () {
+
     }
 }
 
@@ -1823,6 +1973,7 @@ function saveProgress() {
         b_trees
     }));
 }
+
 const saved = JSON.parse(localStorage.getItem("tagless_progress") || "null");
 if (saved) {
     best_floor = saved.best_floor || 1;
