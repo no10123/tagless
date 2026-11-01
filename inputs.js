@@ -29,6 +29,8 @@ document.addEventListener("keydown", (event) => {
             return;
         }
         updateB();
+        saveProgress();
+        progressChange = false;
         reset();
         return;
     }
@@ -43,7 +45,8 @@ document.addEventListener("keydown", (event) => {
             leaderboard_menu = false;
             trees = false;
             compendiumPage = false;
-            SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
+            avail_classes = Classes.filter(c => c.unlocked);
+            si = Math.max(0, avail_classes.indexOf(Class));
             reset();
             draw();
             return;
@@ -67,6 +70,7 @@ document.addEventListener("keydown", (event) => {
         } else if (key === "4") {
             mainMenu = false;
             achivement_menu = true;
+            ay = 0;
             A_class = -1;
             draw();
             return;
@@ -96,6 +100,7 @@ document.addEventListener("keydown", (event) => {
             for (let c of Classes) {
                 c.unlocked = true;
             }
+            progressChange = true;
             draw();
             return;
         } else if (key === "c") {
@@ -104,7 +109,6 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "f") {
-            SEEDS = {"shop":[],"lvl":[],"map":[],"misc":[]}
             mainMenu = false;
             Settings = false;
             credits  = false;
@@ -115,6 +119,7 @@ document.addEventListener("keydown", (event) => {
             trees = false;
             compendiumPage = false;
             genSeeds(genDaily());
+            updateWH();
             Class = Classes[Math.floor(seedRand("misc") * Classes.length)]
             reset();
             if (Class.noCoins || Class.noPotions) {
@@ -132,6 +137,7 @@ document.addEventListener("keydown", (event) => {
         if (key === "Escape") {
             leaderboard_menu = false;
             mainMenu = true;
+            ay = 0
             draw();
             return;
         } else if (key === "ArrowLeft" && leaderboardPage > 0) {
@@ -148,8 +154,8 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "d") {
-            leaderboardClassIndex += leaderboardClassIndex < Classes.length ? 1 : -Classes.length - 1;
-            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
+            leaderboardClassIndex = leaderboardClassIndex >= Classes.length - 1 ? -1 : leaderboardClassIndex + 1;
+            loadLeaderboard(leaderboardClassIndex === -1 ? null : Classes.map(i => i.name)[leaderboardClassIndex]);
             draw();
             return;
         }
@@ -246,6 +252,24 @@ document.addEventListener("keydown", (event) => {
             return;
         }
     } else if (start_config) {
+        if (event.altKey) {
+            let Seed = prompt("Seed: (blank will gen one for you)");
+            if (Seed == null || String(Seed).trim() === "") Seed = Math.random().toString(36).substring(2, 12);
+            currentSeed = String(Seed).trim();
+            genSeeds(currentSeed);
+            updateWH();
+            notify("SEED", currentSeed);
+            start_config = false;
+            reset();
+            if (Class.noCoins || Class.noPotions) {
+                for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                    if (Class.noCoins && grid[y][x] === "$") grid[y][x] = air;
+                    if (Class.noPotions && "phPH".includes(grid[y][x])) grid[y][x] = air;
+                }
+            }
+            draw();
+            return;
+        }
         if (avail_classes.length === 0) return;
         if (key.toLocaleLowerCase() === "w") {
             si = (si - 1 + avail_classes.length) % avail_classes.length;
@@ -270,6 +294,9 @@ document.addEventListener("keydown", (event) => {
             return;
         }
         if (key === "0") {
+            currentSeed = "";
+            RNGS = {};
+            updateWH();
             start_config = false;
             reset();
             if (Class.noCoins || Class.noPotions) {
@@ -284,13 +311,6 @@ document.addEventListener("keydown", (event) => {
             achivement_menu = true
             A_class = Classes.indexOf(Class)
             ay = 0
-        }
-        if (event.altKey) {
-            let Seed = prompt("Seed: (blank will gen one for you)");
-            if (Seed == null || String(Seed).trim() === "") {
-                Seed = Math.random().toString(36).substring(2, 12);
-            }
-            genSeeds(String(Seed).trim());
         }
     } else if (trees) {
         if (key.toLocaleLowerCase() === "w") {
@@ -390,9 +410,19 @@ document.addEventListener("keydown", (event) => {
         return;
     }
 
-    if (["w", "a", "s", "d"].includes(key)) {
+    const arrowKeys = {
+        "ArrowUp": "w",
+        "ArrowDown": "s",
+        "ArrowLeft": "a",
+        "ArrowRight": "d"
+    };
+
+    const mappedKey = arrowKeys[key] || key;
+
+
+    if (["w", "a", "s", "d"].includes(mappedKey)) {
         for (let i = 0; i < p.move_speed; i++) {
-            p.move(key, 1);
+            p.move(mappedKey, 1);
             draw();
         }
         draw();

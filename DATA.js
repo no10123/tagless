@@ -318,7 +318,7 @@ class DATA {
         ]
         this.u_skillOptions = [
             {"name":"bonus items", "func": () => {shop.avail = Math.min(10, shop.avail + 1);},"uses":7},
-            {"name":"bonus skills", "func": () => {this.skill_choices = Math.min(10, this.skill_choices + 1);},"uses":5},
+            {"name":"bonus skills", "func": () => {p.skill_choices = Math.min(10, p.skill_choices + 1);},"uses":5},
         ];
     }
 }

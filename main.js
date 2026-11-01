@@ -10,6 +10,9 @@ const TILE_SIZE = 16;
 const SPRITE_SIZE = 16;
 let W = 41;
 let H = 21;
+let TW = 0;
+let TH = 0;
+let u;
 let grid = [];
 let best_floor = 1
 function loadSheet(src) {
@@ -74,6 +77,7 @@ function updateWH() {
         W = Math.max(12, columns - instructionWidth - 20);
         H = Math.max(instructions.length, rows - 5);
     }
+    if (currentSeed) { W = 41; H = Math.max(instructions.length, 21); };
     const columns = Math.floor(screenW / charWidth);
     const rows = Math.floor(screenH / lineHeight);
 
@@ -119,6 +123,7 @@ let instructions = [
     "% discount: -0%   ",
     "curse:      0     ",
     "best floor: 1     ",
+    "seed:       NA    ",
 ]
 const instructionWidth = 20;
 updateWH();
@@ -165,7 +170,7 @@ function genTIP() {
         "Go Gamble",
         "there are 3 starting classes.",
         "you should explore some while playing",
-        `only ${100 - percentComplete | 100}% left.`,
+        `only ${(100 - percentComplete).toFixed(1)}% left.`,
         "balancing makes a game less fun and this game is fun.",
         "have you found the basement",
         "what lays outside the building?",
@@ -241,6 +246,7 @@ function genlist(stringSeed, count) {
 }
 
 let RNGS = {};
+let currentSeed = "";
 
 function genSeeds(seed) {
     RNGS = {
@@ -278,7 +284,6 @@ function addEntry (type, value) {
 }
 
 // trees
-let t_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
 let b_trees = {"floor":0,"money":0,"hp":0,"attack":0,"luck":0,"lvl":0,"xp":0,"vision":0,"totalTime":0,"curse":0}
 
 let trees = false;
@@ -294,19 +299,6 @@ function updateB() {
     b_trees.vision    = Math.max(b_trees.vision,    fogMap.range )
     b_trees.totalTime = Math.max(b_trees.totalTime, t.run        )
     b_trees.curse     = Math.max(b_trees.curse,     curse        )
-}
-
-function updateT() {
-    t_trees.floor     = (t_trees.floor     + p.floor      )
-    t_trees.money     = (t_trees.money     + p.money      )
-    t_trees.hp        = (t_trees.hp        + p.hp         )
-    t_trees.attack    = (t_trees.attack    + p.attack     )
-    t_trees.luck      = (t_trees.luck      + p.luck       )
-    t_trees.lvl       = (t_trees.lvl       + p.lvl        )
-    t_trees.xp        = (t_trees.xp        + p.xp         )
-    t_trees.vision    = (t_trees.vision    + fogMap.range )
-    t_trees.totalTime = (t_trees.totalTime + t.run        )
-    t_trees.curse     = (t_trees.curse     + curse        )
 }
 
 function updateStats() {
@@ -332,6 +324,7 @@ function updateStats() {
     instructions[21] = `% discount: -${shop.percent_discount}%`;
     instructions[22] = `curse:      ${curse}`;
     instructions[23] = `best floor: ${best_floor}`;
+    instructions[24] = `seed: ${currentSeed}`;
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
     updateB();
 }
@@ -358,6 +351,7 @@ let start_config = false;
 let achivement_menu = false;
 window.ClassAchivement = false;
 let progressLoaded = false;
+let progressChange = false;
 let leaderboard_menu = false;
 
 let si = 0;
@@ -420,35 +414,31 @@ for (let i = 0; i < Classes.length; i++) {
     // each class gets its OWN copy, not a reference to the global list
     Classes[i].achivements = [{"name":"open the game","best":6}];
 }
-
 function checkAchivements (floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty) {
     for (const a of locked_achivements) {
         if (!a.req(floor,money,hp,attack,luck,lvl,xp,range,trun,tfloor,W,H,difficulty)) continue;
 
         const globalEntry = achivements.find(x => x.name === a.name);
         if (globalEntry) {
-            if (difficulty > globalEntry.best) globalEntry.best = difficulty;
+            if (difficulty > globalEntry.best) { globalEntry.best = difficulty; progressChange = true; }
         } else {
             achivements.push({name: a.name, desc: a.desc, best: difficulty});
             notify("ACHIVEMENT", a.name);
+            progressChange = true;
             if (a.unlock) {
                 const c = Classes.find(x => x.name === a.unlock);
-                if (c && !c.unlocked) {
-                    c.unlocked = true;
-                    notify("CLASS UNLOCKED", c.name);
-                }
+                if (c && !c.unlocked) { c.unlocked = true; notify("CLASS UNLOCKED", c.name); progressChange = true; }
             }
         }
         const classEntry = Class.achivements.find(x => x.name === a.name);
         if (classEntry) {
-            if (difficulty > classEntry.best) classEntry.best = difficulty;
+            if (difficulty > classEntry.best) { classEntry.best = difficulty; progressChange = true; }
         } else {
             Class.achivements.push({name: a.name, desc: a.desc, best: difficulty});
         }
     }
-    if (floor > Class.best_floor) Class.best_floor = floor;
-    percentComplete = percentFormula();
-    saveProgress();
+    if (floor > Class.best_floor) { Class.best_floor = floor; progressChange = true; }
+    if (progressChange) percentComplete = percentFormula();
 }
 
 let percentTotal = locked_achivements.length
@@ -1171,39 +1161,30 @@ function draw() {
             "TREES:",
             "-- tree of floors --",
             `best:  ${b_trees.floor}`,
-            `total: ${t_trees.floor}`,
             "-- tree of wealth --",
             `best:  ${b_trees.money}`,
-            `total: ${t_trees.money}`,
             "-- tree of health --",
             `best:  ${b_trees.hp}`,
-            `total: ${t_trees.hp}`,
             "-- tree of power --",
             `best:  ${b_trees.attack}`,
-            `total: ${t_trees.attack}`,
             "-- tree of luck --",
             `best:  ${b_trees.luck}`,
-            `total: ${t_trees.luck}`,
             "-- tree of lvl --",
             `best:  ${b_trees.lvl}`,
-            `total: ${t_trees.lvl}`,
             "-- tree of xp --",
             `best:  ${b_trees.xp}`,
-            `total: ${t_trees.xp}`,
             "-- tree of sight --",
             `best:  ${b_trees.vision}`,
-            `total: ${t_trees.vision}`,
             "-- tree of time --",
             `best:  ${b_trees.totalTime}`,
-            `total: ${t_trees.totalTime}`,
             "-- cursed tree --",
             `best:  ${b_trees.curse}`,
-            `total: ${t_trees.curse}`,
             "",
             "esc - go back to main menu",
             border
         ];
-        let display = "\n  " + " ".repeat(W);
+        window.lines = lines;
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
             const text = line.slice(0, TW);
             const left = Math.floor((TW - text.length) / 2);
@@ -1414,14 +1395,17 @@ class Player {
 
     rollSkillSelection(excluded = []) {
         const usesRequired = 1 + Number(this.lvl % 10 === 0) + Number(this.lvl % 3 === 0);
-        const available = [
-            ...this.options,
-            ...this.unique_options.filter(option => option.uses >= usesRequired)
-        ];
-        let candidates = available.filter(option => !excluded.includes(option));
-        if (candidates.length < this.skill_choices) candidates = available;
-        return candidates.sort(() => 0.5 - seedRand("lvl")).slice(0, this.skill_choices);
+        const available = [...this.options, ...this.unique_options.filter(o => o.uses >= usesRequired)];
+        let pool = available.filter(o => !excluded.includes(o));
+        if (pool.length < this.skill_choices) pool = [...available];
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(seedRand("lvl") * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, this.skill_choices);
     }
+
+
 
     xpForLevels(count) {
         let requiredXp = 0;
@@ -1538,6 +1522,8 @@ class stairs {
         shopState = (!Class.noShop && !Class.goldToXp) ? shop.open(p.floor) : null;
         if (fmOn) fm.newFloor();
         Class.FloorStart();
+        saveProgress(); 
+        progressChange = false;
         updateStats();
         draw();
     }
@@ -1730,7 +1716,7 @@ class Enemy {
         let hit = power + p.luck;
         let damage;
         if (hit > battle.enemy.ac) {
-            damage = Math.max(0, Math.round(Class.OnAttack(p.attack * p.attack_mult * (hit > p.critChance * 100 ? p.critMult : 1))));
+            damage = Math.max(0, Math.round(Class.OnAttack(p.attack * p.attack_mult * (hit > p.critChance * 100 ? 1 + p.critMult : 1))));
         } else {
             damage = 0;
         }
@@ -1744,7 +1730,7 @@ class Enemy {
     }
     flee() {
         if (!battle) return;
-        if (seedRand("misc") * (p.luck/10 + 1) < 0.5) {
+        if (seedRand("misc") < Math.min(0.95, 0.5 * (1 + p.luck / 10))) {
             gameMessage = "You escaped!";
             battle = null;
             Class.fleeBattle();
@@ -1962,6 +1948,8 @@ let fm = new floorModifiers();
 let fmOn = true;
 
 function reset() {
+    encounter = false;
+    encounterOwner = null;
     move_conter = 0;
     shopState = null;
     skill_selection = null;
@@ -2002,6 +1990,7 @@ reset();
 
 setInterval(() => {
     t.tick();
+    if (progressChange) { saveProgress(); progressChange = false; }
     draw();
 }, 1000);
 
@@ -2009,16 +1998,19 @@ setInterval(() => {
 // saves progress
 function saveProgress() {
     if (!progressLoaded) return;
-    localStorage.setItem("tagless_progress", JSON.stringify({
-        best_floor,
-        achivements,
-        classes: Object.fromEntries(Classes.map(c => [c.name, {
-            unlocked: c.unlocked, best_floor: c.best_floor, achivements: c.achivements
-        }])),
-        compendium,
-        t_trees,
-        b_trees
-    }));
+    try {
+        localStorage.setItem("tagless_progress", JSON.stringify({
+            best_floor,
+            achivements,
+            classes: Object.fromEntries(Classes.map(c => [c.name, {
+                unlocked: c.unlocked, best_floor: c.best_floor, achivements: c.achivements
+            }])),
+            compendium,
+            b_trees
+        }));
+    } catch (err) {
+        console.warn("save failed:", err);
+    }
 }
 
 const saved = JSON.parse(localStorage.getItem("tagless_progress") || "null");
@@ -2030,11 +2022,11 @@ if (saved) {
         if (s) { c.unlocked = s.unlocked; c.best_floor = s.best_floor || 0; c.achivements = s.achivements || c.achivements; }
     }
     compendium = saved.compendium || compendium;
-    t_trees = saved.t_trees || t_trees;
     b_trees = saved.b_trees || b_trees;
     progressLoaded = true;
 }
 progressLoaded = true;
+percentComplete = percentFormula();
 
 
 // trigers - [0] -> use key -> [1] ->  use shift -> [2] -> move 10 tiles -> [3] or just notify all
