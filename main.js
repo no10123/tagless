@@ -12,30 +12,42 @@ let W = 41;
 let H = 21;
 let grid = [];
 let best_floor = 1
-const spriteSheet = new Image();
-let spriteSheetReady = false;
-
-spriteSheet.onload = () => {
-    spriteSheetReady = true;
-    draw();
-};
-
-spriteSheet.onerror = () => {console.error("img thingy failed to load.");};
-
-spriteSheet.src = "art/chareters.png";
-function drawSprite(index, x, y) {
-    if (!spriteSheetReady) return;
-
-    const sx = (index % 16) * SPRITE_SIZE;
-    const sy = Math.floor(index / 16) * SPRITE_SIZE;
-
-    ctx.drawImage(
-        spriteSheet,
-        sx, sy, SPRITE_SIZE, SPRITE_SIZE,
-        x * TILE_SIZE, y * TILE_SIZE,
-        TILE_SIZE, TILE_SIZE
-    );
+function loadSheet(src) {
+    const sheet = { img: new Image(), ready: false };
+    sheet.img.onload = () => { sheet.ready = true; draw(); };
+    sheet.img.onerror = () => console.error(src + " failed to load.");
+    sheet.img.src = src;
+    return sheet;
 }
+const charSheet = loadSheet("art/chareters.png");
+const uiSheet   = loadSheet("art/ui.png");
+
+function drawSprite(sheet, cols, index, x, y) {
+    if (!sheet.ready) return false;
+    ctx.drawImage(
+        sheet.img,
+        (index % cols) * SPRITE_SIZE, Math.floor(index / cols) * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE,
+        x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
+    );
+    return true;
+}
+const drawChar = (i, x, y) => drawSprite(charSheet, 16, i, x, y);
+const drawUI   = (i, x, y) => drawSprite(uiSheet, 19, i, x, y);
+
+const UI_GRASS_A = 0;   // dark green
+const UI_GRASS_B = 19;  // light green
+const UI_WALL    = 1;   // black
+const UI_FOG     = 20;  // light grey
+const ITEM_SPRITES = {
+    "$": 2,   // coin
+    "p": 4,   //  +10  hp  (pink)
+    "h": 5,   //  +25  hp  (red)
+    "P": 23,  //  +50  hp  (dark red)
+    "H": 24,  //  +100 hp  (purple)
+    "e": 3,   // small encounter
+    "E": 22,  // big encounter
+    ">": 21   // stairs
+};
 
 let renderMode = localStorage.getItem("tagless_render_mode") === "art" ? "art" : "ascii";
 
@@ -62,6 +74,11 @@ function updateWH() {
         W = Math.max(12, columns - instructionWidth - 20);
         H = Math.max(instructions.length, rows - 5);
     }
+    const columns = Math.floor(screenW / charWidth);
+    const rows = Math.floor(screenH / lineHeight);
+
+    TW = Math.max(12, columns - instructionWidth - 20);
+    TH = Math.max(instructions.length, rows - 5);
 }
 
 /* lets adress the github token, yes i know it's a vulnerability and I shouldn't hardcode it.
@@ -750,31 +767,52 @@ function cDraw() {
 
     ctx.fillStyle = "#1e1e2e";
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = "red";
-    ctx.fillRect(0, 0, 32, 32);
+
+    const tileOrColor = (index, x, y, color) => {
+        if (drawUI(index, x, y)) return;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    };
 
     for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-            const hidden = fogOn && !fogMap.isExplored(x, y);
-            const tile = hidden ? fogMap.sym : grid[y][x];
-            if (tile === " ") continue;
             const drawY = y + 1;
 
-            if (tile === "@") {
-                const sprite = Classes.indexOf(Class);
-                drawSprite(sprite >= 0 ? sprite : 0, x, drawY);
+            if (fogOn && !fogMap.isExplored(x, y)) {
+                tileOrColor(UI_FOG, x, drawY, "#ffffff");
                 continue;
             }
 
-            const px = x * TILE_SIZE + TILE_SIZE / 2;
-            const py = drawY * TILE_SIZE + TILE_SIZE / 2;
+            const tile = grid[y][x];
 
+            if (tile === wall) {
+                tileOrColor(UI_WALL, x, drawY, "#000000");
+                continue;
+            }
+
+            const even = (x + y) % 2 === 0;
+            tileOrColor(even ? UI_GRASS_A : UI_GRASS_B, x, drawY, even ? "#37946e" : "#6abe30");
+
+            if (tile === air) continue;
+
+            if (tile === "@") {
+                const sprite = Classes.indexOf(Class);
+                if (!drawChar(sprite >= 0 ? sprite : 0, x, drawY)) {
+                    ctx.font = "bold 14px Consolas, monospace";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillText("@", x * TILE_SIZE + TILE_SIZE / 2, drawY * TILE_SIZE + TILE_SIZE / 2);
+                }
+                continue;
+            }
+            const idx = ITEM_SPRITES[tile];
+            if (idx !== undefined && drawUI(idx, x, drawY)) continue;
             ctx.font = "bold 14px Consolas, monospace";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillStyle = hidden ? "#45475a" : "#cdd6f4";
-
-            ctx.fillText(tile, px, py);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(tile, x * TILE_SIZE + TILE_SIZE / 2, drawY * TILE_SIZE + TILE_SIZE / 2);
         }
     }
 }
@@ -783,7 +821,7 @@ function cDraw() {
 function draw() {
     fogMap.reveal(p.x, p.y);
     updateStats()
-    const border = "+" + "-".repeat(Math.max(0, W - 2)) + "+";
+    const border = "+" + "-".repeat(Math.max(0, TW - 2)) + "+";
     if (mainMenu) {
         Settings = false;
         credits  = false;
@@ -819,11 +857,11 @@ function draw() {
         ay = Math.max(0, Math.min(ay, Math.max(0, lines.length - Math.max(1, H - 5))));
         lines.splice(0, ay);
         lines.length = Math.min(lines.length, Math.max(1, H - 5));
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (shopState) {
@@ -839,11 +877,11 @@ function draw() {
             "0. Continue to floor",
             "ESC. Continue to floor"
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (battle) {
@@ -858,8 +896,8 @@ function draw() {
         let message = battle.message || gameMessage;
         const messageLines = [];
         while (message && messageLines.length < H - 15) {
-            let line = message.slice(0, W);
-            if (message.length > W && line.includes(" ")) line = line.slice(0, line.lastIndexOf(" "));
+            let line = message.slice(0, TW);
+            if (message.length > TW && line.includes(" ")) line = line.slice(0, line.lastIndexOf(" "));
             messageLines.push(line);
             message = message.slice(line.length).trimStart();
         }
@@ -875,11 +913,11 @@ function draw() {
         outBottom.push(border)
         const outs = [...outTop,...Array(Math.max(0, H - outTop.length - outBottom.length)).fill(""),...outBottom].slice(0, H);
 
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const out of outs) {
-            const line = String(out).slice(0, W);
-            const left = Math.floor((W - line.length) / 2);
-            display += "\n    " + " ".repeat(left) + line.padEnd(W - left);
+            const line = String(out).slice(0, TW);
+            const left = Math.floor((TW - line.length) / 2);
+            display += "\n    " + " ".repeat(left) + line.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (skill_selection) {
@@ -892,11 +930,11 @@ function draw() {
         }
         out.push(border);
         const lines = [...out.slice(0, H), ...Array(Math.max(0, H - out.length)).fill("")];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of lines) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (Settings) {
@@ -916,11 +954,11 @@ function draw() {
             "",
             border
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (credits) {
@@ -940,11 +978,11 @@ function draw() {
             "esc - go back to main menu",
             border
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (help) {
@@ -973,16 +1011,18 @@ function draw() {
             "$ - money",
             "> - stairs to next floor.",
             "? - fog / unknown tile",
+            "e - small encounter",
+            "E - large encounter",
             "",
             "esc - go back to main menu",
             "",
             border
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (achivement_menu) {
@@ -1013,11 +1053,11 @@ function draw() {
         window.lines = lines
         ay = Math.max(0, Math.min(ay, Math.max(0, lines.length - Math.max(1, H - 5))));
         lines = lines.slice(ay, ay + Math.max(1, H - 5));
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (Death) {
@@ -1047,11 +1087,11 @@ function draw() {
             "(press any other key to restart)",
             border,
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
         if (score > +localStorage.getItem("tagless_best") || !localStorage.getItem("tagless_best")) {
@@ -1088,11 +1128,11 @@ function draw() {
         lines.push('0. play game')
         lines.push('')
         lines.push(border)
-        let display = "\n  " + " ".repeat(W + instructionWidth);
+        let display = "\n  " + " ".repeat(TW + instructionWidth);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W + instructionWidth);
-            const left = Math.floor((W - text.length + instructionWidth) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left + instructionWidth);
+            const text = line.slice(0, TW + instructionWidth);
+            const left = Math.floor((TW - text.length + instructionWidth) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left + instructionWidth);
         }
         body.innerText = display;
     } else if (leaderboard_menu) {
@@ -1117,11 +1157,11 @@ function draw() {
             ].filter(Boolean).join(" | "));
         }
         lines.push("", "esc - back to main menu", "", border);
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (trees) {
@@ -1165,9 +1205,9 @@ function draw() {
         ];
         let display = "\n  " + " ".repeat(W);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (compendiumPage) {
@@ -1200,11 +1240,11 @@ function draw() {
         window.lines = lines
         ci = Math.max(0, Math.min(ci, Math.max(0, lines.length - Math.max(1, H - 5))));
         lines = lines.slice(ci, ci + Math.max(1, H - 5));
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         for (const line of [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0, H)) {
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left);
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left);
         }
         body.innerText = display;
     } else if (encounter) {
@@ -1233,14 +1273,14 @@ function draw() {
             "",
             "ESC. leave encounter"
         ];
-        let display = "\n  " + " ".repeat(W);
+        let display = "\n  " + " ".repeat(TW);
         const vLines = [...lines, ...Array(Math.max(0, H - lines.length)).fill("")].slice(0,H);
         for (let i = 0; i < vLines.length; i++) {
             const line = vLines[i];
             const instruction = i < column.length ? column[i] : " ";
-            const text = line.slice(0, W);
-            const left = Math.floor((W - text.length) / 2);
-            display += "\n    " + " ".repeat(left) + text.padEnd(W - left) + instruction;
+            const text = line.slice(0, TW);
+            const left = Math.floor((TW - text.length) / 2);
+            display += "\n    " + " ".repeat(left) + text.padEnd(TW - left) + instruction;
         };
         body.innerText = display;
     } else {
