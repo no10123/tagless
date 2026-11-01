@@ -359,7 +359,26 @@ document.addEventListener("keydown", (event) => {
             };
         };
         return;
-    };
+    } else if (compendiumPage) {
+        const maxScroll = Math.max(0, window.lines.length - Math.max(1, H - 5));
+        if (key.toLocaleLowerCase() === "w") {
+            ci = Math.max(0, ci - 1);
+            draw();
+            return;
+        }
+        if (key.toLocaleLowerCase() === "s") {
+            ci = Math.min(maxScroll, ci + 1);
+            draw();
+            return;
+        }
+        if (key === "Escape") {
+            compendiumPage = false;
+            mainMenu = true;
+            ci = 0;
+            draw();
+            return;
+        }
+    }
 
     if (key === "m" || key === "M") {
         music.toggleMusicMute();
