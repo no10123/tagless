@@ -13,7 +13,6 @@ document.addEventListener("keydown", (event) => {
         }
         if (key.toLowerCase() === "1") {
             // posts score and stats
-            const day = currentSeed.startsWith("DAILY: ") ? currentSeed.slice(7) : null;
             const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
             const name = (prompt("name for leaderboard:", localStorage.getItem("tagless_name") || "") || "anonymous").trim().slice(0, 12);
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
@@ -21,9 +20,9 @@ document.addEventListener("keydown", (event) => {
                 method: "POST",
                 headers: {"Authorization": "token " + token, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
-                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}${day ? " | daily " + day : ""}`,
+                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
                     labels: ["score"],
-                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run, seed: currentSeed, daily: day})
+                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run})
                 })
             }).then(r => { gameMessage = r.ok ? "score sent!" : "score failed (" + r.status + ")"; draw(); });
 
@@ -36,7 +35,7 @@ document.addEventListener("keydown", (event) => {
         return;
     }
     if (mainMenu) {
-        } else if (key === "1") {
+        if (key === "1") {
             RNGS = {}; 
             currentSeed = ""; 
             updateWH();
@@ -135,6 +134,7 @@ document.addEventListener("keydown", (event) => {
                 draw();
             }
             return;
+        }
     } else if (leaderboard_menu) {
         const pageSize = Math.max(1, Math.floor((H - 8) / 3));
         const pageCount = Math.ceil(leaderboard.length / pageSize);
@@ -153,14 +153,14 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "a") {
-            leaderboardClassIndex = leaderboardClassIndex <= -1 ? Classes.length : leaderboardClassIndex - 1;
-            loadLeaderboard(); 
-            draw(); 
+            leaderboardClassIndex += leaderboardClassIndex > -1 ? -1 : Classes.length;
+            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
+            draw();
             return;
         } else if (key === "d") {
-            leaderboardClassIndex = leaderboardClassIndex >= Classes.length ? -1 : leaderboardClassIndex + 1;
-            loadLeaderboard(); 
-            draw(); 
+            leaderboardClassIndex += leaderboardClassIndex < Classes.length ? 1 : -Classes.length - 1;
+            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
+            draw();
             return;
         }
     } else if (shopState) {
@@ -358,17 +358,16 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         }
-    } else if (encounter) {
+       } else if (encounter) {
         if (key === "Escape") {
-            const before = encounter;
-            trade.func();
-            if (encounter === before) { encounter = false; encounterOwner = null; }
+            encounter = false;
+            encounterOwner = null;
             draw();
             return;
         };
-        if ((key === "r" || key === "R") && reroll_tokens > 0) {
+        if ((key === "r" || key === "R") && reroll_tokens > 0 && encounterOwner?.rerollable !== false) {
             reroll_tokens--;
-            encounterOwner?.rerollable !== false
+            encounter = encounterOwner ? encounterOwner.openTrades() : [];
             updateStats();
             draw();
             return;
@@ -377,9 +376,9 @@ document.addEventListener("keydown", (event) => {
         if (Number.isInteger(choice) && choice >= 0 && choice < encounter.length) {
             const trade = encounter[choice];
             if (trade.cost()) {
+                const before = encounter;
                 trade.func();
-                encounter = false;
-                encounterOwner = null;
+                if (encounter === before) { encounter = false; encounterOwner = null; }
                 updateStats();
                 draw();
             };

@@ -379,12 +379,6 @@ function winBattle() {
     draw();
 }
 
-function genDaily()   { return `DAILY: ${new Date().toISOString().slice(0, 10)}`; }
-function dailyClass() {
-    const r = mulberry32(cyrb128("MISC: " + genDaily())[0])();
-    return Classes[Math.floor(r * Classes.length)];
-}
-
 const nh = Math.max(1, Math.floor((H - 10) / 4));
 let notifications = [];
 function notify(name, ws) {
@@ -488,15 +482,13 @@ let leaderboardLoaded = false;
 let leaderboardPage = 0;
 let leaderboardClassIndex = -1;
 
-async function loadLeaderboard(tab = leaderboardClassIndex) {
-    const isDaily = tab === Classes.length;
-    const ccc = tab >= 0 && tab < Classes.length ? Classes[tab].name : null;
+async function loadLeaderboard(ccc=null) {
     leaderboard = [];
     leaderboardError = "";
     leaderboardLoaded = false;
     leaderboardPage = 0;
     try {
-        const response = await fetch("/api/leaderboard" + (isDaily ? "?daily=1" : ""));
+        const response = await fetch("https://api.github.com/repos/no10123/tagless/issues?labels=score&state=all&per_page=100");
         if (!response.ok) {
             throw new Error(`Github Error: ${response.status} ${response.statusText}`);
         }
@@ -527,19 +519,13 @@ async function loadLeaderboard(tab = leaderboardClassIndex) {
                 money: Number.isFinite(stats.money) ? stats.money : "?",
                 className: stats.cls || titleParts[1] || "unknown",
                 time: Number.isFinite(stats.time) ? formatTime(stats.time) : (titleParts[2] || "unknown"),
-                difficulty: ["easy", "medium", "hard", "expert", "master", "godlike", "ascended"][Number(titleParts[3])] || "unknown",
-                daily: titleParts[4]?.match(/^daily (\d{4}-\d{2}-\d{2})$/)?.[1] || stats.daily || null,
+                difficulty: ["easy", "medium", "hard", "expert", "master", "godlike", "ascended"][Number(titleParts[3])] || "unknown"
             };
-        }).filter(i => isDaily ? i.daily === dailyDate() : !i.daily)
-        .filter(Boolean).filter(i => ccc === null || i.className === ccc)
+        }).filter(Boolean).filter(i => ccc === null || i.className === ccc)
          .sort((a, b) => {
          if (b.score !== a.score) {
              return b.score - a.score;
          }
-         if (isDaily) { 
-            const seen = new Set(); 
-            leaderboard = leaderboard.filter(i => !seen.has(i.name) && seen.add(i.name)); 
-        }
          
          const [mA, sA] = a.time.split(':').map(Number);
          const [mB, sB] = b.time.split(':').map(Number);
@@ -1143,9 +1129,7 @@ function draw() {
         }
         body.innerText = display;
     } else if (leaderboard_menu) {
-        const tab = leaderboardClassIndex;
-        const label = tab === Classes.length ? `DAILY ${dailyDate()} (${dailyClass().name})` : tab >= 0 ? `CLASS: ${Classes[tab].name}` : "CLASS: all";
-        let lines = [border, "LEADERBOARD", "", `-- ${label} --`];
+        let lines = [border, "LEADERBOARD", "", `-- CLASS: ${Classes.map(i => i.name)[leaderboardClassIndex] || "all"} --`];
         if (leaderboardError) lines.push(`error: ${leaderboardError}`);
         else if (!leaderboardLoaded) lines.push("loading...");
         else if (leaderboard.length === 0) lines.push("no scores yet, so go play!");
@@ -1539,8 +1523,6 @@ class stairs {
             m.spawn()
         }
         shopState = (!Class.noShop && !Class.goldToXp) ? shop.open(p.floor) : null;
-        events.roll(p.floor);
-        if (!shopState) events.open();
         if (fmOn) fm.newFloor();
         Class.FloorStart();
         saveProgress(); 
