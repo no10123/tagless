@@ -13,6 +13,7 @@ document.addEventListener("keydown", (event) => {
         }
         if (key.toLowerCase() === "1") {
             // posts score and stats
+            const day = currentSeed.startsWith("DAILY: ") ? currentSeed.slice(7) : null;
             const score = Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25));
             const name = (prompt("name for leaderboard:", localStorage.getItem("tagless_name") || "") || "anonymous").trim().slice(0, 12);
             if (name !== "anonymous") localStorage.setItem("tagless_name", name);
@@ -20,9 +21,9 @@ document.addEventListener("keydown", (event) => {
                 method: "POST",
                 headers: {"Authorization": "token " + token, "Content-Type": "application/json", "Accept": "application/vnd.github+json"},
                 body: JSON.stringify({
-                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}`,
+                    title: `[${score}] ${name} | floor ${p.floor} | ${Class.name} | ${formatTime(t.run)} | ${difficulty}${day ? " | daily " + day : ""}`,
                     labels: ["score"],
-                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run})
+                    body: JSON.stringify({score, floor: p.floor, lvl:p.lvl, money:p.money, cls: Class.name, time: t.run, seed: currentSeed, daily: day})
                 })
             }).then(r => { gameMessage = r.ok ? "score sent!" : "score failed (" + r.status + ")"; draw(); });
 
@@ -36,6 +37,9 @@ document.addEventListener("keydown", (event) => {
     }
     if (mainMenu) {
         } else if (key === "1") {
+            RNGS = {}; 
+            currentSeed = ""; 
+            updateWH();
             mainMenu = false;
             Settings = false; credits = false; help = false;
             achivement_menu = false; start_config = true;
@@ -118,10 +122,10 @@ document.addEventListener("keydown", (event) => {
             leaderboard_menu = false;
             trees = false;
             compendiumPage = false;
-            currentSeed = genDaily();
-            genSeeds(currentSeed);
+            difficulty = 1;
+            genSeeds(genDaily());
             updateWH();
-            Class = Classes[Math.floor(seedRand("misc") * Classes.length)];
+            Class = Classes[Math.floor(seedRand("misc") * Classes.length)]; 
             reset();
             if (Class.noCoins || Class.noPotions) {
                 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -131,7 +135,6 @@ document.addEventListener("keydown", (event) => {
                 draw();
             }
             return;
-        }
     } else if (leaderboard_menu) {
         const pageSize = Math.max(1, Math.floor((H - 8) / 3));
         const pageCount = Math.ceil(leaderboard.length / pageSize);
@@ -150,20 +153,20 @@ document.addEventListener("keydown", (event) => {
             draw();
             return;
         } else if (key === "a") {
-            leaderboardClassIndex += leaderboardClassIndex > -1 ? -1 : Classes.length;
-            loadLeaderboard(Classes.map(i => i.name)[leaderboardClassIndex]);
-            draw();
+            leaderboardClassIndex = leaderboardClassIndex <= -1 ? Classes.length : leaderboardClassIndex - 1;
+            loadLeaderboard(); 
+            draw(); 
             return;
         } else if (key === "d") {
-            leaderboardClassIndex = leaderboardClassIndex >= Classes.length - 1 ? -1 : leaderboardClassIndex + 1;
-            loadLeaderboard(leaderboardClassIndex === -1 ? null : Classes.map(i => i.name)[leaderboardClassIndex]);
-            draw();
+            leaderboardClassIndex = leaderboardClassIndex >= Classes.length ? -1 : leaderboardClassIndex + 1;
+            loadLeaderboard(); 
+            draw(); 
             return;
         }
     } else if (shopState) {
         if (key === "Escape" || key === "0") {
             shopState = null;
-            enemy.spawn();
+            if (!events.open()) enemy.spawn();
             draw();
             return;
         } else if (key === "r" || key === "R") {
@@ -357,14 +360,15 @@ document.addEventListener("keydown", (event) => {
         }
     } else if (encounter) {
         if (key === "Escape") {
-            encounter = false;
-            encounterOwner = null;
+            const before = encounter;
+            trade.func();
+            if (encounter === before) { encounter = false; encounterOwner = null; }
             draw();
             return;
         };
         if ((key === "r" || key === "R") && reroll_tokens > 0) {
             reroll_tokens--;
-            encounter = encounterOwner ? encounterOwner.openTrades() : [];
+            encounterOwner?.rerollable !== false
             updateStats();
             draw();
             return;
