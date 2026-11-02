@@ -35,19 +35,19 @@ document.addEventListener("keydown", (event) => {
         return;
     }
     if (mainMenu) {
-        if (key === "1") {
+        } else if (key === "1") {
             mainMenu = false;
-            Settings = false;
-            credits  = false;
-            help     = false;
-            achivement_menu = false;
-            start_config = true;
-            leaderboard_menu = false;
-            trees = false;
-            compendiumPage = false;
+            Settings = false; credits = false; help = false;
+            achivement_menu = false; start_config = true;
+            leaderboard_menu = false; trees = false; compendiumPage = false;
+            battle = null;
+            shopState = null;
+            skill_selection = null;
+            encounter = false;
+            encounterOwner = null;
             avail_classes = Classes.filter(c => c.unlocked);
-            si = Math.max(0, avail_classes.indexOf(Class));
-            reset();
+            si = avail_classes.indexOf(Class);
+            if (si < 0) { si = 0; Class = avail_classes[0]; }
             draw();
             return;
         } else if (key === "2") {
@@ -118,9 +118,10 @@ document.addEventListener("keydown", (event) => {
             leaderboard_menu = false;
             trees = false;
             compendiumPage = false;
-            genSeeds(genDaily());
+            currentSeed = genDaily();
+            genSeeds(currentSeed);
             updateWH();
-            Class = Classes[Math.floor(seedRand("misc") * Classes.length)]
+            Class = Classes[Math.floor(seedRand("misc") * Classes.length)];
             reset();
             if (Class.noCoins || Class.noPotions) {
                 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -306,6 +307,7 @@ document.addEventListener("keydown", (event) => {
                 }
                 draw();
             }
+            localStorage.setItem("tagless_last", JSON.stringify({ cls: Class.name, diff: difficulty }));
         }
         if (key === "Enter") {
             achivement_menu = true
@@ -422,12 +424,14 @@ document.addEventListener("keydown", (event) => {
 
     if (["w", "a", "s", "d"].includes(mappedKey)) {
         for (let i = 0; i < p.move_speed; i++) {
+            if (battle || Death || shopState || encounter || skill_selection) break;
             p.move(mappedKey, 1);
             draw();
         }
         draw();
     } else if (["W", "A", "S", "D"].includes(key)) {
         for (let i = 0; i < p.sprint; i++) {
+            if (battle || Death || shopState || encounter || skill_selection) break;
             p.move(key.toLocaleLowerCase(), 1);
             draw();
         }

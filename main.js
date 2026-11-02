@@ -15,6 +15,8 @@ let TH = 0;
 let u;
 let grid = [];
 let best_floor = 1
+let RNGS = {};
+let currentSeed = "";
 function loadSheet(src) {
     const sheet = { img: new Image(), ready: false };
     sheet.img.onload = () => { sheet.ready = true; draw(); };
@@ -124,6 +126,7 @@ let instructions = [
     "curse:      0     ",
     "best floor: 1     ",
     "seed:       NA    ",
+    "score:      0     ",
 ]
 const instructionWidth = 20;
 updateWH();
@@ -245,10 +248,9 @@ function genlist(stringSeed, count) {
     return list;
 }
 
-let RNGS = {};
-let currentSeed = "";
 
 function genSeeds(seed) {
+    currentSeed = seed;
     RNGS = {
         shop: mulberry32(cyrb128("SHOP: " + seed)[0]),
         lvl:  mulberry32(cyrb128("LVL:  " + seed)[0]),
@@ -324,7 +326,8 @@ function updateStats() {
     instructions[21] = `% discount: -${shop.percent_discount}%`;
     instructions[22] = `curse:      ${curse}`;
     instructions[23] = `best floor: ${best_floor}`;
-    instructions[24] = `seed: ${currentSeed}`;
+    instructions[24] = `seed:       ${currentSeed.replace("DAILY: ", "").slice(0, 8)}`;
+    instructions[25] = `score:      ${Math.floor((p.floor * 1000 + p.money + p.lvl * 50) * (1 + difficulty * 0.25))}`;
     checkAchivements(p.floor,p.money,p.hp,p.attack,p.luck,p.lvl,p.xp,fogMap.range,t.run,t.floor,W,H,difficulty)
     updateB();
 }
@@ -698,14 +701,14 @@ function newFloor({ outline = false, openRatio = 0.45, pillars = 15, brush = 1, 
     fogMap.reset();
     if (countAsFloor && t) t.NewFloor();
     if (p) p.place("@");
-    if (!Class.noPotions) {
+    if (countAsFloor && !Class.noPotions) {
         PS.spawn(); 
         PM.spawn(); 
         PL.spawn(); 
         PX.spawn();
     }
-    if (e) e.spawn();
-    if (E) E.spawn();
+    if (countAsFloor && e) e.spawn();
+    if (countAsFloor && E) E.spawn();
     if (countAsFloor && p && difficulty == 0) p.hp = p.hp + 10;
 }
 
@@ -1033,7 +1036,7 @@ function draw() {
         const unlockedNames = new Set(shown.map(a => a.name));
         for (let i = 0; i < locked_achivements.length; i++) {
             if (!unlockedNames.has(locked_achivements[i].name)) {
-                lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc}`)
+                lines.push(`${locked_achivements[i].name} - ${locked_achivements[i].desc} - unlocks: ${locked_achivements[i].unlock || "none"}`);
             }
         }
         lines.push("")
